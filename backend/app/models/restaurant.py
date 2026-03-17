@@ -19,7 +19,7 @@ class Restaurant(Base):
     amenities = Column(String(300), nullable=True)
     average_rating = Column(Float, default=0.0)
     review_count = Column(Integer, default=0)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    owner_id = Column(Integer, ForeignKey("restaurant_owners.id"), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     reviews = relationship("Review", back_populates="restaurant")
