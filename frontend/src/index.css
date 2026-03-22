@@ -1,0 +1,23 @@
+body {
+  background-color: #f5f5f5;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.card {
+  border-radius: 0.5rem;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: #d32323 !important;
+}
+
+.btn-danger {
+  background-color: #d32323;
+  border-color: #d32323;
+}
+
+.btn-danger:hover {
+  background-color: #a41b1b;
+  border-color: #a41b1b;
+}
