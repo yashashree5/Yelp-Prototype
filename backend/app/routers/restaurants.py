@@ -16,16 +16,26 @@ def create_restaurant(
     address: str = None,
     city: str = None,
     description: str = None,
+    amenities: str = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
+    # Can claim restaurant if user is an owner
+    owner_id = None
+    try:
+        if hasattr(current_user, "restaurant_location"):
+            owner_id = current_user.id
+    except Exception:
+        owner_id = None
+
     restaurant = Restaurant(
         name=name,
         cuisine=cuisine,
         address=address,
         city=city,
         description=description,
-        owner_id=current_user.id
+        amenities=amenities,
+        owner_id=owner_id
     )
     db.add(restaurant)
     db.commit()
@@ -119,3 +129,32 @@ def update_restaurant(
     db.commit()
     db.refresh(restaurant)
     return restaurant
+
+
+# Claim a restaurant (owner claims an existing unowned listing)
+@router.post("/{restaurant_id}/claim")
+def claim_restaurant(
+    restaurant_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Only allow restaurant owners to claim
+    try:
+        restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+        if not restaurant:
+            raise HTTPException(status_code=404, detail="Restaurant not found")
+
+        if restaurant.owner_id is None:
+            restaurant.owner_id = current_user.id
+            db.commit()
+            db.refresh(restaurant)
+            return {"message": "Restaurant claimed successfully", "restaurant": restaurant}
+        elif restaurant.owner_id == current_user.id:
+            return {"message": "You already own this restaurant", "restaurant": restaurant}
+        else:
+            raise HTTPException(status_code=400, detail="Restaurant already claimed by another owner")
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to claim restaurant")

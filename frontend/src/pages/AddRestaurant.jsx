@@ -9,7 +9,8 @@ export default function AddRestaurant() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "", cuisine: "", address: "", city: "",
-    description: "", contact: "", hours: "", pricing_tier: 2
+    description: "", contact: "", hours: "", pricing_tier: 2,
+    ambiance: []
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -20,10 +21,11 @@ export default function AddRestaurant() {
     setLoading(true);
     setError("");
     setSuccess("");
-    try {
-      await api.post(
-        `/restaurants/?name=${encodeURIComponent(form.name)}&cuisine=${encodeURIComponent(form.cuisine)}&address=${encodeURIComponent(form.address)}&city=${encodeURIComponent(form.city)}&description=${encodeURIComponent(form.description)}`
-      );
+      try {
+        const amenities = (form.ambiance || []).join(",");
+        await api.post(
+          `/restaurants/?name=${encodeURIComponent(form.name)}&cuisine=${encodeURIComponent(form.cuisine)}&address=${encodeURIComponent(form.address)}&city=${encodeURIComponent(form.city)}&description=${encodeURIComponent(form.description)}&amenities=${encodeURIComponent(amenities)}`
+        );
       setSuccess("Restaurant added successfully!");
       setTimeout(() => navigate("/"), 1500);
     } catch (err) {
@@ -124,6 +126,28 @@ export default function AddRestaurant() {
                 }}>
                 {p.label.split(" — ")[0]}
               </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Ambiance / Amenities */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Ambiance</label>
+          <p style={{ fontSize: "12px", color: "#999", margin: "0 0 10px" }}>Select any that apply</p>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {[
+              "Casual", "Fine dining", "Family-friendly", "Romantic", "Outdoor", "Sports bar", "Trendy", "Cozy"
+            ].map(a => (
+              <button type="button" key={a} onClick={() => {
+                setForm(prev => {
+                  const arr = prev.ambiance || [];
+                  return { ...prev, ambiance: arr.includes(a) ? arr.filter(i => i !== a) : [...arr, a] };
+                });
+              }}
+              style={{
+                padding: "8px 12px", borderRadius: "6px", border: (form.ambiance || []).includes(a) ? "2px solid #d32323" : "1px solid #ddd",
+                background: (form.ambiance || []).includes(a) ? "#d32323" : "#fff", color: (form.ambiance || []).includes(a) ? "#fff" : "#333", cursor: "pointer", fontWeight: 600
+              }}>{a}</button>
             ))}
           </div>
         </div>
