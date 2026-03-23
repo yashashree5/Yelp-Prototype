@@ -23,12 +23,21 @@ export default function AddRestaurant() {
     setSuccess("");
       try {
         const amenities = (form.ambiance || []).join(",");
-        await api.post(
-          `/restaurants/?name=${encodeURIComponent(form.name)}&cuisine=${encodeURIComponent(form.cuisine)}&address=${encodeURIComponent(form.address)}&city=${encodeURIComponent(form.city)}&description=${encodeURIComponent(form.description)}&amenities=${encodeURIComponent(amenities)}`
-        );
+        const tierMap = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
+        await api.post("/restaurants/", {
+          name: form.name,
+          cuisine: form.cuisine,
+          address: form.address,
+          city: form.city,
+          description: form.description,
+          amenities,
+          contact: form.contact,
+          hours: form.hours,
+          pricing_tier: tierMap[form.pricing_tier] || "$$"
+        });
       setSuccess("Restaurant added successfully!");
       setTimeout(() => navigate("/"), 1500);
-    } catch (err) {
+    } catch {
       setError("Failed to add restaurant. Please try again.");
     } finally {
       setLoading(false);

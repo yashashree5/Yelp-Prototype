@@ -5,10 +5,12 @@ from typing import List, Optional
 from app.database import get_db
 from app.models.restaurant import Restaurant
 from app.models.preferences import UserPreferences
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_reviewer
 from app.models.user import User
 from tavily import TavilyClient
 from groq import Groq
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 import json
 import os
 
@@ -46,7 +48,7 @@ class ChatResponse(BaseModel):
 def chat(
     request: ChatRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_reviewer)
 ):
     # 1. Load user preferences
     prefs = db.query(UserPreferences).filter(UserPreferences.user_id == current_user.id).first()
@@ -84,7 +86,8 @@ User Preferences:
         tavily_context = ""
 
     # 4. Build messages
-    system_prompt = f"""You are a helpful restaurant recommendation assistant for a Yelp-like platform.
+    prompt = ChatPromptTemplate.from_template(
+        """You are a helpful restaurant recommendation assistant for a Yelp-like platform.
 Recommend restaurants based on user queries and their preferences.
 
 {prefs_text}
@@ -98,6 +101,14 @@ Instructions:
 - At the end of your response add: RECOMMENDATIONS_JSON: [{{"id": 1}}, {{"id": 2}}]
 - Support follow-up questions
 """
+    )
+    system_prompt = StrOutputParser().invoke(
+        prompt.format(
+            prefs_text=prefs_text,
+            restaurants_text=restaurants_text,
+            tavily_context=tavily_context
+        )
+    )
 
     messages = [{"role": "system", "content": system_prompt}]
     for msg in request.conversation_history:

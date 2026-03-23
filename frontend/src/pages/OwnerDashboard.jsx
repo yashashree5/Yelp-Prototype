@@ -19,16 +19,14 @@ export default function OwnerDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const resHistory = await api.get("/users/history");
-        const myRestaurants = resHistory.data?.restaurants_added || [];
+        const resHistory = await api.get("/users/owner/dashboard");
+        const myRestaurants = resHistory.data?.restaurants || [];
         setRestaurants(myRestaurants);
-
-        // Fetch reviews for all owned restaurants
-        const allReviews = [];
-        for (const r of myRestaurants) {
-          const res = await api.get(`/reviews/restaurant/${r.id}`);
-          res.data.forEach(review => allReviews.push({ ...review, restaurant_name: r.name, restaurant_id: r.id }));
-        }
+        const nameById = Object.fromEntries(myRestaurants.map(r => [r.id, r.name]));
+        const allReviews = (resHistory.data?.reviews || []).map(review => ({
+          ...review,
+          restaurant_name: nameById[review.restaurant_id] || "Restaurant"
+        }));
         setReviews(allReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       } catch (err) {
         console.error(err);
@@ -134,7 +132,9 @@ export default function OwnerDashboard() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
                   <div style={{ fontSize: "13px", color: "#0073bb", fontWeight: 600, marginBottom: "4px" }}>{r.restaurant_name}</div>
-                  <div style={{ color: "#f15700", fontSize: "14px", marginBottom: "4px" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</div>
+                  <div style={{ color: "#f15700", fontSize: "14px", marginBottom: "4px" }}>
+                    {"★".repeat(Math.round(r.rating || 0))}{"☆".repeat(5 - Math.round(r.rating || 0))}
+                  </div>
                   <p style={{ margin: "0 0 4px", fontSize: "14px", color: "#333" }}>{r.comment}</p>
                   <div style={{ fontSize: "12px", color: "#999" }}>
                     {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : ""}

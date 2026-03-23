@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.preferences import UserPreferences
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_reviewer
 from app.models.user import User
 
 router = APIRouter(prefix="/preferences", tags=["Preferences"])
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/preferences", tags=["Preferences"])
 @router.get("/")
 def get_preferences(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_reviewer)
 ):
     try:
         prefs = db.query(UserPreferences).filter(UserPreferences.user_id == current_user.id).first()
@@ -28,7 +28,7 @@ def get_preferences(
 def update_preferences(
     data: dict = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_reviewer)
 ):
     try:
         cuisines = data.get("cuisines")

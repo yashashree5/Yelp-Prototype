@@ -16,6 +16,7 @@ class UserResponse(BaseModel):
     email: str
     phone: Optional[str] = None
     city: Optional[str] = None
+    state: Optional[str] = None
     country: Optional[str] = None
     gender: Optional[str] = None
     about_me: Optional[str] = None
@@ -27,3 +28,15 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    gender: Optional[str] = None
+    about_me: Optional[str] = None
+    languages: Optional[str] = None
+    profile_pic: Optional[str] = None

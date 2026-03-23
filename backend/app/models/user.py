@@ -11,6 +11,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     phone = Column(String(20), nullable=True)
     city = Column(String(100), nullable=True)
+    state = Column(String(2), nullable=True)
     country = Column(String(100), nullable=True)
     gender = Column(String(20), nullable=True)
     about_me = Column(String(500), nullable=True)

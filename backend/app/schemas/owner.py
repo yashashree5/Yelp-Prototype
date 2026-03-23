@@ -19,3 +19,8 @@ class OwnerResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class OwnerProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    restaurant_location: Optional[str] = None

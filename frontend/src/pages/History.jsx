@@ -53,7 +53,9 @@ export default function History() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                      <span style={{ color: "#f15700", fontSize: "16px" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                      <span style={{ color: "#f15700", fontSize: "16px" }}>
+                        {"★".repeat(Math.round(r.rating || 0))}{"☆".repeat(5 - Math.round(r.rating || 0))}
+                      </span>
                       <span style={{ fontWeight: 600, color: "#333" }}>{r.rating}/5</span>
                     </div>
                     <p style={{ margin: "0 0 8px", color: "#333", fontSize: "14px" }}>{r.comment}</p>

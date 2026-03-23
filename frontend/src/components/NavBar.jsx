@@ -31,11 +31,15 @@ export default function Navbar({ auth, setAuth }) {
         <span style={{ cursor: "default", fontWeight: 500 }}>Restaurants ▾</span>
         {auth.loggedIn && (
           <>
-            <Link to="/add-restaurant" style={{ textDecoration: "none", color: "#333" }}>Add Restaurant</Link>
-            <Link to="/favorites" style={{ textDecoration: "none", color: "#333" }}>Favorites</Link>
-            <Link to="/history" style={{ textDecoration: "none", color: "#333" }}>History</Link>
-            <Link to="/preferences" style={{ textDecoration: "none", color: "#333" }}>Preferences</Link>
-            <Link to="/chatbot" style={{ textDecoration: "none", color: "#d32323", fontWeight: 600 }}>🤖 AI Assistant</Link>
+            {auth.user?.role !== "owner" && (
+              <>
+                <Link to="/add-restaurant" style={{ textDecoration: "none", color: "#333" }}>Add Restaurant</Link>
+                <Link to="/favorites" style={{ textDecoration: "none", color: "#333" }}>Favorites</Link>
+                <Link to="/history" style={{ textDecoration: "none", color: "#333" }}>History</Link>
+                <Link to="/preferences" style={{ textDecoration: "none", color: "#333" }}>Preferences</Link>
+                <Link to="/chatbot" style={{ textDecoration: "none", color: "#d32323", fontWeight: 600 }}>🤖 AI Assistant</Link>
+              </>
+            )}
             {auth.user?.role === "owner" && (
               <Link to="/owner/dashboard" style={{ textDecoration: "none", color: "#333" }}>Dashboard</Link>
             )}
@@ -59,7 +63,6 @@ export default function Navbar({ auth, setAuth }) {
           </>
         ) : (
           <>
-            <Link to="/owner/login" style={{ textDecoration: "none", color: "#666", fontSize: "13px" }}>Owner Login</Link>
             <Link to="/login" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>Log In</Link>
             <Link to="/signup" style={{
               background: "#d32323", color: "#fff", padding: "8px 16px",

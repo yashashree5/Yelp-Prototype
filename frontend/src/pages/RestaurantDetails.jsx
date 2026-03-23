@@ -1,6 +1,7 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
+import RestaurantMap from "../components/RestaurantMap.jsx";
 
 const CUISINE_IMAGES = {
   Italian: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
@@ -30,13 +31,12 @@ const StarRating = ({ rating }) => (
 
 export default function RestaurantDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [userRole, setUserRole] = useState(localStorage.getItem("role") || null);
+  const [userRole] = useState(localStorage.getItem("role") || null);
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
@@ -53,14 +53,18 @@ export default function RestaurantDetails() {
         try {
           const resUser = await api.get("/users/me");
           setCurrentUserId(resUser.data.id);
-        } catch {}
+        } catch {
+          // User may be unauthenticated.
+        }
 
         // Check if favorited
         try {
           const resFav = await api.get("/favorites/");
           const favIds = resFav.data.map(f => f.restaurant_id || f.id);
           setIsFavorite(favIds.includes(parseInt(id)));
-        } catch {}
+        } catch {
+          // Favorites are only available for reviewer accounts.
+        }
 
       } catch (err) {
         console.error(err);
@@ -169,22 +173,37 @@ export default function RestaurantDetails() {
       </div>
 
       {/* Info grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
-        <div style={infoCardStyle}>
-          <div style={infoLabelStyle}>📍 Address</div>
-          <div style={infoValueStyle}>{restaurant.address || "N/A"}, {restaurant.city}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "24px", marginBottom: "32px" }}>
+        {/* Left: Info Cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={infoCardStyle}>
+            <div style={infoLabelStyle}>📍 Address</div>
+            <div style={infoValueStyle}>{restaurant.address || "N/A"}, {restaurant.city}</div>
+          </div>
+          <div style={infoCardStyle}>
+            <div style={infoLabelStyle}>🕐 Hours</div>
+            <div style={infoValueStyle}>{restaurant.hours || "Contact for hours"}</div>
+          </div>
+          <div style={infoCardStyle}>
+            <div style={infoLabelStyle}>📞 Contact</div>
+            <div style={infoValueStyle}>{restaurant.contact || "Not provided"}</div>
+          </div>
+          <div style={infoCardStyle}>
+            <div style={infoLabelStyle}>💰 Price Range</div>
+            <div style={infoValueStyle}>{price}</div>
+          </div>
         </div>
-        <div style={infoCardStyle}>
-          <div style={infoLabelStyle}>🕐 Hours</div>
-          <div style={infoValueStyle}>{restaurant.hours || "Contact for hours"}</div>
-        </div>
-        <div style={infoCardStyle}>
-          <div style={infoLabelStyle}>📞 Contact</div>
-          <div style={infoValueStyle}>{restaurant.contact || "Not provided"}</div>
-        </div>
-        <div style={infoCardStyle}>
-          <div style={infoLabelStyle}>💰 Price Range</div>
-          <div style={infoValueStyle}>{price}</div>
+
+        {/* Right: Map */}
+        <div style={{ 
+          height: "100%", 
+          minHeight: "280px",
+          borderRadius: "8px", 
+          overflow: "hidden", 
+          border: "1px solid #e0e0e0",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+        }}>
+          <RestaurantMap restaurants={[restaurant]} hideNumbering={true} />
         </div>
       </div>
 

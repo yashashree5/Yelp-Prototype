@@ -23,7 +23,7 @@ const GENDERS = ["Male", "Female", "Non-binary", "Prefer not to say"];
 
 export default function Profile() {
   const [profile, setProfile] = useState({
-    name: "", email: "", phone: "", city: "", country: "",
+    name: "", email: "", phone: "", city: "", state: "", country: "",
     gender: "", about_me: "", languages: "", profile_pic: ""
   });
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function Profile() {
     try {
       await api.put("/users/me", profile);
       setSuccess("Profile updated successfully!");
-    } catch (err) {
+    } catch {
       setError("Failed to update profile.");
     } finally {
       setSaving(false);
@@ -135,11 +135,21 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* City + Country */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+        {/* City + State + Country */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 0.6fr 1fr", gap: "16px", marginBottom: "16px" }}>
           <div>
             <label style={labelStyle}>City</label>
             <input style={inputStyle} value={profile.city || ""} onChange={e => handleChange("city", e.target.value)} placeholder="San Jose" />
+          </div>
+          <div>
+            <label style={labelStyle}>State (abbr.)</label>
+            <input
+              style={inputStyle}
+              value={profile.state || ""}
+              onChange={e => handleChange("state", e.target.value.toUpperCase().slice(0, 2))}
+              placeholder="CA"
+              maxLength={2}
+            />
           </div>
           <div>
             <label style={labelStyle}>Country</label>

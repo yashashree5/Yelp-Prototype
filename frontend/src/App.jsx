@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar.jsx";
+import Navbar from "./components/NavBar.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
@@ -15,18 +15,28 @@ import Chatbot from "./pages/Chatbot";
 import OwnerSignup from "./pages/OwnerSignup.jsx";
 import OwnerLogin from "./pages/OwnerLogin.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
-import OwnerRestaurantManage from "./pages/OwnerRestaurantManage.jsx";
+import OwnerManageRestaurant from "./pages/OwnerManageRestaurant.jsx";
+import ChatWidget from "./components/ChatWidget.jsx";
 
 export default function App() {
-  const [auth, setAuth] = useState({ loggedIn: false, user: null });
+  const [auth, setAuth] = useState(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role") || "user";
+    return token ? { loggedIn: true, user: { role } } : { loggedIn: false, user: null };
+  });
 
-  function RequireAuth({ children }) {
+  function renderForRole(role, element) {
     if (!auth.loggedIn) return (
       <div className="container mt-5">
         <div className="alert alert-danger">Login required. <a href="/login">Login here</a></div>
       </div>
     );
-    return children;
+    if (auth.user?.role !== role) return (
+      <div className="container mt-5">
+        <div className="alert alert-warning">You are not authorized to access this page.</div>
+      </div>
+    );
+    return element;
   }
 
   return (
@@ -44,18 +54,19 @@ export default function App() {
         <Route path="/owner/login" element={<OwnerLogin setAuth={setAuth} />} />
 
         {/* User protected routes */}
-        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-        <Route path="/write-review/:id" element={<RequireAuth><WriteReview /></RequireAuth>} />
-        <Route path="/add-restaurant" element={<RequireAuth><AddRestaurant /></RequireAuth>} />
-        <Route path="/preferences" element={<RequireAuth><Preferences /></RequireAuth>} />
-        <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />
-        <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
-        <Route path="/chatbot" element={<RequireAuth><Chatbot /></RequireAuth>} />
+        <Route path="/profile" element={renderForRole("user", <Profile />)} />
+        <Route path="/write-review/:id" element={renderForRole("user", <WriteReview />)} />
+        <Route path="/add-restaurant" element={renderForRole("user", <AddRestaurant />)} />
+        <Route path="/preferences" element={renderForRole("user", <Preferences />)} />
+        <Route path="/favorites" element={renderForRole("user", <Favorites />)} />
+        <Route path="/history" element={renderForRole("user", <History />)} />
+        <Route path="/chatbot" element={renderForRole("user", <Chatbot />)} />
 
         {/* Owner protected routes */}
-        <Route path="/owner/dashboard" element={<RequireAuth><OwnerDashboard /></RequireAuth>} />
-        <Route path="/owner/restaurant/:id" element={<RequireAuth><OwnerRestaurantManage /></RequireAuth>} />
+        <Route path="/owner/dashboard" element={renderForRole("owner", <OwnerDashboard />)} />
+        <Route path="/owner/restaurant/:id" element={renderForRole("owner", <OwnerManageRestaurant />)} />
       </Routes>
+      <ChatWidget isLoggedIn={auth.loggedIn} />
     </>
   );
 }

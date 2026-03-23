@@ -62,7 +62,7 @@ export default function Chatbot() {
         content: res.data.response,
         recommendations: res.data.recommendations || []
       }]);
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, {
         role: "assistant",
         content: "Sorry, I'm having trouble connecting right now. Please try again!",

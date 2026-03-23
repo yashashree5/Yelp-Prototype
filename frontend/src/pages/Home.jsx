@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
 import RestaurantCard from "../components/RestaurantCard.jsx";
+import RestaurantMap from "../components/RestaurantMap.jsx";
 
 const FILTERS = ["All", "Price", "Open Now", "Reservations", "Offers Delivery", "Offers Takeout"];
 const CUISINE_FILTERS = ["All", "Italian", "Chinese", "Indian", "Japanese", "Mexican", "American"];
@@ -130,21 +131,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* Right: Google Maps embed */}
+        {/* Right: Interactive Map */}
         <div style={{
           width: "400px", flexShrink: 0, position: "sticky", top: "60px",
-          height: "calc(100vh - 120px)", borderLeft: "1px solid #e0e0e0", overflow: "hidden"
+          height: "calc(100vh - 120px)", borderLeft: "1px solid #e0e0e0", overflow: "hidden", zIndex: 0
         }}>
-          <iframe
-            title="Map"
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d101653.84396546!2d-122.0840575!3d37.3382082!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fcae48af93ff5%3A0xb99d8c0aca540f78!2sSan%20Jose%2C%20CA!5e0!3m2!1sen!2sus!4v1234567890"
-          />
+          <RestaurantMap restaurants={filtered} />
         </div>
       </div>
     </div>

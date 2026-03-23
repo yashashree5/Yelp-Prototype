@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -8,7 +8,7 @@ from app.models.owner import RestaurantOwner
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/user/login")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_auth(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -22,4 +22,17 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=401, detail="Invalid role")
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return {"role": role, "principal": user}
+
+def get_current_user(token_data = Depends(get_current_auth)):
+    return token_data["principal"]
+
+def get_current_reviewer(token_data = Depends(get_current_auth)):
+    if token_data["role"] != "user":
+        raise HTTPException(status_code=403, detail="User role required")
+    return token_data["principal"]
+
+def get_current_owner(token_data = Depends(get_current_auth)):
+    if token_data["role"] != "owner":
+        raise HTTPException(status_code=403, detail="Owner role required")
+    return token_data["principal"]
