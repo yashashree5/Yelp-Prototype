@@ -42,7 +42,31 @@ def list_favorites(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        return db.query(Favorite).filter(Favorite.user_id == current_user.id).all()
+        favs = db.query(Favorite).filter(Favorite.user_id == current_user.id).all()
+        result = []
+        for f in favs:
+            r = db.query(Restaurant).filter(Restaurant.id == f.restaurant_id).first()
+            restaurant_data = None
+            if r:
+                restaurant_data = {
+                    "id": r.id,
+                    "name": r.name,
+                    "cuisine": r.cuisine,
+                    "city": r.city,
+                    "address": r.address,
+                    "average_rating": r.average_rating,
+                    "review_count": r.review_count,
+                    "description": r.description,
+                    "pricing_tier": r.pricing_tier,
+                    "photos": r.photos
+                }
+            result.append({
+                "id": f.id,
+                "restaurant_id": f.restaurant_id,
+                "created_at": f.created_at.isoformat() if f.created_at else None,
+                "restaurant": restaurant_data
+            })
+        return result
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to fetch favorites")
 

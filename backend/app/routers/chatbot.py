@@ -10,6 +10,7 @@ from app.models.user import User
 from tavily import TavilyClient
 from groq import Groq
 import json
+import os
 
 router = APIRouter(prefix="/ai-assistant", tags=["AI Assistant"])
 

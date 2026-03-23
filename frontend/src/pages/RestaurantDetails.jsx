@@ -36,6 +36,7 @@ export default function RestaurantDetails() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userRole, setUserRole] = useState(localStorage.getItem("role") || null);
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
@@ -137,7 +138,8 @@ export default function RestaurantDetails() {
         </div>
 
         {/* Favorite button */}
-        <button onClick={toggleFavorite} style={{
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={toggleFavorite} style={{
           background: isFavorite ? "#d32323" : "#fff",
           color: isFavorite ? "#fff" : "#d32323",
           border: "2px solid #d32323", borderRadius: "6px",
@@ -145,6 +147,25 @@ export default function RestaurantDetails() {
         }}>
           {isFavorite ? "❤️ Saved" : "🤍 Save"}
         </button>
+
+          {/* Claim button for owners if restaurant not claimed */}
+          {userRole === 'owner' && !restaurant.owner_id && (
+            <button onClick={async () => {
+              if (!window.confirm('Claim this restaurant as your listing?')) return;
+              try {
+                await api.post(`/restaurants/${id}/claim`);
+                // refresh restaurant
+                const res = await api.get(`/restaurants/${id}`);
+                setRestaurant(res.data);
+                alert('Restaurant claimed successfully.');
+              } catch (err) {
+                alert(err.response?.data?.detail || 'Failed to claim restaurant.');
+              }
+            }} style={{ padding: '10px 20px', background: '#0073bb', color: '#fff', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+              Claim
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Info grid */}

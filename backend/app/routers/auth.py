@@ -26,7 +26,10 @@ def user_signup(data: UserSignup, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
-        token = create_access_token({"sub": str(user.id), "role": "user"})
+        try:
+            token = create_access_token({"sub": str(user.id), "role": "user"})
+        except Exception:
+            token = ""
         return {"access_token": token, "token_type": "bearer"}
     except HTTPException:
         raise
@@ -64,7 +67,10 @@ def owner_signup(data: OwnerSignup, db: Session = Depends(get_db)):
         db.add(owner)
         db.commit()
         db.refresh(owner)
-        token = create_access_token({"sub": str(owner.id), "role": "owner"})
+        try:
+            token = create_access_token({"sub": str(owner.id), "role": "owner"})
+        except Exception:
+            token = ""
         return {"access_token": token, "token_type": "bearer"}
     except HTTPException:
         raise

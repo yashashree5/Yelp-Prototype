@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.preferences import UserPreferences
@@ -26,16 +26,18 @@ def get_preferences(
 
 @router.put("/")
 def update_preferences(
-    cuisines: str = None,
-    price_range: str = None,
-    location: str = None,
-    dietary_needs: str = None,
-    ambiance: str = None,
-    sort_by: str = None,
+    data: dict = Body(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
+        cuisines = data.get("cuisines")
+        price_range = data.get("price_range")
+        location = data.get("location")
+        dietary_needs = data.get("dietary_needs")
+        ambiance = data.get("ambiance")
+        sort_by = data.get("sort_by")
+
         prefs = db.query(UserPreferences).filter(UserPreferences.user_id == current_user.id).first()
 
         if not prefs:

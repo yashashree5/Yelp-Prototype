@@ -15,6 +15,7 @@ import Chatbot from "./pages/Chatbot";
 import OwnerSignup from "./pages/OwnerSignup.jsx";
 import OwnerLogin from "./pages/OwnerLogin.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
+import OwnerRestaurantManage from "./pages/OwnerRestaurantManage.jsx";
 
 export default function App() {
   const [auth, setAuth] = useState({ loggedIn: false, user: null });
@@ -53,6 +54,7 @@ export default function App() {
 
         {/* Owner protected routes */}
         <Route path="/owner/dashboard" element={<RequireAuth><OwnerDashboard /></RequireAuth>} />
+        <Route path="/owner/restaurant/:id" element={<RequireAuth><OwnerRestaurantManage /></RequireAuth>} />
       </Routes>
     </>
   );
