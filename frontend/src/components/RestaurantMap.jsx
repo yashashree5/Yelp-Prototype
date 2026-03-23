@@ -1,101 +1,178 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Link } from 'react-router-dom';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useEffect, useMemo, useState } from "react";
+import { GoogleMap, InfoWindow, MarkerF, useJsApiLoader } from "@react-google-maps/api";
 
-// Component to recenter map when restaurants change
-function ChangeView({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(center, zoom);
-  }, [center, zoom, map]);
-  return null;
+const DEFAULT_CENTER = { lat: 37.3382, lng: -121.8863 }; // San Jose
+const MAP_CONTAINER_STYLE = { width: "100%", height: "100%" };
+const MAP_ID = "yelp-prototype-map";
+
+function buildAddress(restaurant) {
+  return [restaurant?.address, restaurant?.city].filter(Boolean).join(", ");
 }
 
-const createCustomIcon = (index, hideNumbering = false) => {
-  return L.divIcon({
-    className: 'custom-map-marker',
-    html: `<div style="
-      background-color: #d32323;
-      color: white;
-      border-radius: 50%;
-      border: 2px solid white;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 14px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    ">${hideNumbering ? "📍" : index + 1}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16]
-  });
-};
-
 export default function RestaurantMap({ restaurants, hideNumbering = false }) {
-  // Default to San Jose
-  let center = [37.3382, -121.8863];
-  let zoom = 12;
+  const [coordsById, setCoordsById] = useState({});
+  const [activeId, setActiveId] = useState(null);
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  if (restaurants && restaurants.length > 0) {
-    const validRestaurants = restaurants.filter(r => r.latitude && r.longitude);
-    if (validRestaurants.length > 0) {
-        // Average coordinates for center
-        const latSum = validRestaurants.reduce((sum, r) => sum + r.latitude, 0);
-        const lngSum = validRestaurants.reduce((sum, r) => sum + r.longitude, 0);
-        center = [latSum / validRestaurants.length, lngSum / validRestaurants.length];
-        
-        if (validRestaurants.length === 1) {
-            zoom = 14;
+  const { isLoaded } = useJsApiLoader({
+    id: MAP_ID,
+    googleMapsApiKey: apiKey || ""
+  });
+
+  const normalizedRestaurants = useMemo(() => (restaurants || []).filter(Boolean), [restaurants]);
+
+  useEffect(() => {
+    if (!isLoaded || !window.google || normalizedRestaurants.length === 0) return;
+    const geocoder = new window.google.maps.Geocoder();
+    let cancelled = false;
+
+    async function ensureCoordinates() {
+      const next = {};
+      const geocodePromises = [];
+
+      normalizedRestaurants.forEach((r) => {
+        const lat = Number(r.latitude);
+        const lng = Number(r.longitude);
+        if (!Number.isNaN(lat) && !Number.isNaN(lng) && lat !== 0 && lng !== 0) {
+          next[r.id] = { lat, lng };
+          return;
         }
+        const address = buildAddress(r);
+        if (!address) return;
+        geocodePromises.push(
+          new Promise((resolve) => {
+            geocoder.geocode({ address }, (results, status) => {
+              if (status === "OK" && results?.[0]?.geometry?.location) {
+                const location = results[0].geometry.location;
+                resolve({ id: r.id, point: { lat: location.lat(), lng: location.lng() } });
+              } else {
+                resolve(null);
+              }
+            });
+          })
+        );
+      });
+
+      const geocoded = await Promise.all(geocodePromises);
+      geocoded.forEach((item) => {
+        if (item) next[item.id] = item.point;
+      });
+
+      if (!cancelled) setCoordsById(next);
     }
+
+    ensureCoordinates();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, normalizedRestaurants]);
+
+  const markers = useMemo(
+    () =>
+      normalizedRestaurants
+        .map((r, index) => ({ restaurant: r, index, point: coordsById[r.id] }))
+        .filter((entry) => !!entry.point),
+    [normalizedRestaurants, coordsById]
+  );
+
+  const mapCenter = useMemo(() => {
+    if (markers.length === 0) return DEFAULT_CENTER;
+    const lat = markers.reduce((sum, m) => sum + m.point.lat, 0) / markers.length;
+    const lng = markers.reduce((sum, m) => sum + m.point.lng, 0) / markers.length;
+    return { lat, lng };
+  }, [markers]);
+
+  const zoom = markers.length <= 1 ? 14 : 12;
+
+  if (!apiKey) {
+    return (
+      <div style={{ padding: "12px", color: "#666", fontSize: "13px" }}>
+        Add `VITE_GOOGLE_MAPS_API_KEY` in `frontend/.env` to enable Google Maps.
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return <div style={{ padding: "12px", color: "#666", fontSize: "13px" }}>Loading map...</div>;
   }
 
   return (
-    <div style={{ height: '100%', width: '100%', zIndex: 0 }}>
-      {/* zIndex ensures map does not cover sticky headers/navbars */}
-      <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%', zIndex: 0 }}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <GoogleMap
+      mapContainerStyle={MAP_CONTAINER_STYLE}
+      center={mapCenter}
+      zoom={zoom}
+      options={{
+        streetViewControl: false,
+        mapTypeControl: false,
+        fullscreenControl: false
+      }}
+    >
+      {markers.map(({ restaurant, index, point }) => (
+        <MarkerF
+          key={restaurant.id}
+          position={point}
+          label={
+            hideNumbering
+              ? undefined
+              : {
+                  text: String(index + 1),
+                  color: "white",
+                  fontWeight: "700"
+                }
+          }
+          onClick={() => setActiveId(restaurant.id)}
+          icon={{
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: hideNumbering ? 10 : 14,
+            fillColor: "#d32323",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2
+          }}
         />
-        <ChangeView center={center} zoom={zoom} />
-        
-        {restaurants && restaurants.map((r, index) => (
-          r.latitude && r.longitude ? (
-            <Marker key={r.id} position={[r.latitude, r.longitude]} icon={createCustomIcon(index, hideNumbering)}>
-              <Popup>
-                <div style={{ textAlign: 'left', minWidth: '180px' }}>
-                  <img src={r.photos || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80"} alt={r.name} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }} />
-                  <h4 style={{ margin: '0 0 4px', fontSize: '15px' }}>{index + 1}. {r.name}</h4>
-                  <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#666' }}>{r.cuisine} • {r.pricing_tier}</p>
-                  <div style={{ marginBottom: '10px' }}>
-                    <span style={{ color: '#d32323', fontWeight: 'bold' }}>★ {r.average_rating?.toFixed(1) || "New"}</span>
-                    <span style={{ color: '#999', fontSize: '12px', marginLeft: '4px' }}>({r.review_count || 0} reviews)</span>
-                  </div>
-                  <Link to={`/restaurant/${r.id}`} style={{ 
-                    display: 'block', 
-                    background: '#d32323', 
-                    color: '#fff', 
-                    textDecoration: 'none', 
-                    padding: '8px', 
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    textAlign: 'center'
-                  }}>
-                    View Details
-                  </Link>
-                </div>
-              </Popup>
-            </Marker>
-          ) : null
-        ))}
-      </MapContainer>
-    </div>
+      ))}
+
+      {markers.map(({ restaurant, index, point }) =>
+        activeId === restaurant.id ? (
+          <InfoWindow key={`info-${restaurant.id}`} position={point} onCloseClick={() => setActiveId(null)}>
+            <div style={{ minWidth: "180px", fontFamily: "Arial, sans-serif" }}>
+              <img
+                src={restaurant.photos || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80"}
+                alt={restaurant.name}
+                style={{ width: "100%", height: "90px", objectFit: "cover", borderRadius: "4px", marginBottom: "8px" }}
+              />
+              <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "4px" }}>
+                {hideNumbering ? "" : `${index + 1}. `}
+                {restaurant.name}
+              </div>
+              <div style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>
+                {restaurant.cuisine || "Cuisine"} • {restaurant.pricing_tier || "$$"}
+              </div>
+              <div style={{ fontSize: "12px", marginBottom: "8px" }}>
+                <span style={{ color: "#d32323", fontWeight: 700 }}>
+                  ★ {restaurant.average_rating?.toFixed(1) || "New"}
+                </span>
+                <span style={{ color: "#999", marginLeft: "4px" }}>({restaurant.review_count || 0} reviews)</span>
+              </div>
+              <a
+                href={`/restaurant/${restaurant.id}`}
+                style={{
+                  display: "inline-block",
+                  background: "#d32323",
+                  color: "#fff",
+                  textDecoration: "none",
+                  padding: "6px 10px",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  fontWeight: 600
+                }}
+              >
+                View Details
+              </a>
+            </div>
+          </InfoWindow>
+        ) : null
+      )}
+    </GoogleMap>
   );
 }
