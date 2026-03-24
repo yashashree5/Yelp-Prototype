@@ -94,7 +94,7 @@ def user_history(
 ):
     try:
         reviews = db.query(Review).filter(Review.user_id == current_user.id).all()
-        restaurants = db.query(Restaurant).filter(Restaurant.owner_id == current_user.id).all()
+        restaurants = db.query(Restaurant).filter(Restaurant.created_by_user_id == current_user.id).all()
         return {
             "reviews": reviews,
             "restaurants_added": restaurants

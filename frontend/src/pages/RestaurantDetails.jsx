@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
-import RestaurantMap from "../components/RestaurantMap.jsx";
 
 const CUISINE_IMAGES = {
   Italian: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
@@ -15,6 +14,18 @@ const CUISINE_IMAGES = {
 };
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
+
+function formatPricingTier(tier) {
+  if (!tier && tier !== 0) return null;
+  if (typeof tier === "string") {
+    const trimmed = tier.trim();
+    if (trimmed.startsWith("$")) return trimmed;
+    const maybeNumber = Number(trimmed);
+    if (Number.isFinite(maybeNumber)) return PRICE_MAP[maybeNumber] || null;
+  }
+  if (typeof tier === "number") return PRICE_MAP[tier] || null;
+  return null;
+}
 
 const StarRating = ({ rating }) => (
   <span style={{ display: "inline-flex", gap: "2px" }}>
@@ -111,7 +122,7 @@ export default function RestaurantDetails() {
   );
 
   const image = restaurant.photos || CUISINE_IMAGES[restaurant.cuisine] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80";
-  const price = PRICE_MAP[restaurant.pricing_tier] || "$$";
+  const price = formatPricingTier(restaurant.pricing_tier) || "$$";
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px", fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
@@ -172,38 +183,23 @@ export default function RestaurantDetails() {
         </div>
       </div>
 
-      {/* Info grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "24px", marginBottom: "32px" }}>
-        {/* Left: Info Cards */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={infoCardStyle}>
-            <div style={infoLabelStyle}>📍 Address</div>
-            <div style={infoValueStyle}>{restaurant.address || "N/A"}, {restaurant.city}</div>
-          </div>
-          <div style={infoCardStyle}>
-            <div style={infoLabelStyle}>🕐 Hours</div>
-            <div style={infoValueStyle}>{restaurant.hours || "Contact for hours"}</div>
-          </div>
-          <div style={infoCardStyle}>
-            <div style={infoLabelStyle}>📞 Contact</div>
-            <div style={infoValueStyle}>{restaurant.contact || "Not provided"}</div>
-          </div>
-          <div style={infoCardStyle}>
-            <div style={infoLabelStyle}>💰 Price Range</div>
-            <div style={infoValueStyle}>{price}</div>
-          </div>
+      {/* Info cards */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "32px", maxWidth: "640px" }}>
+        <div style={infoCardStyle}>
+          <div style={infoLabelStyle}>📍 Address</div>
+          <div style={infoValueStyle}>{restaurant.address || "N/A"}, {restaurant.city}</div>
         </div>
-
-        {/* Right: Map */}
-        <div style={{ 
-          height: "100%", 
-          minHeight: "280px",
-          borderRadius: "8px", 
-          overflow: "hidden", 
-          border: "1px solid #e0e0e0",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
-        }}>
-          <RestaurantMap restaurants={[restaurant]} hideNumbering={true} />
+        <div style={infoCardStyle}>
+          <div style={infoLabelStyle}>🕐 Hours</div>
+          <div style={infoValueStyle}>{restaurant.hours || "Contact for hours"}</div>
+        </div>
+        <div style={infoCardStyle}>
+          <div style={infoLabelStyle}>📞 Contact</div>
+          <div style={infoValueStyle}>{restaurant.contact || "Not provided"}</div>
+        </div>
+        <div style={infoCardStyle}>
+          <div style={infoLabelStyle}>💰 Price Range</div>
+          <div style={infoValueStyle}>{price}</div>
         </div>
       </div>
 
@@ -240,6 +236,15 @@ export default function RestaurantDetails() {
                   <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>{r.rating}/5</span>
                 </div>
                 <p style={{ margin: "0 0 8px", fontSize: "15px", color: "#333" }}>{r.comment}</p>
+                {r.photos && (
+                  <div style={{ marginBottom: "8px" }}>
+                    <img
+                      src={r.photos}
+                      alt="Review photo"
+                      style={{ width: "100%", maxHeight: "220px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e0e0e0" }}
+                    />
+                  </div>
+                )}
                 <div style={{ fontSize: "12px", color: "#999" }}>
                   {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : ""}
                 </div>

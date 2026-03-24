@@ -1,0 +1,200 @@
+%% Yelp Prototype -- Lab 1 Report (IEEE journal-style, SINGLE COLUMN)
+%% Compile: pdflatex Lab1_Report_IEEE_OneColumn.tex (twice if you use \ref)
+%% Requires: IEEEtran.cls (texlive-publishers or CTAN IEEEtran)
+
+\documentclass[onecolumn,journal]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{placeins}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+%% Args: #1 = label key (no spaces), #2 = caption, #3 = suggested filename under figures/
+\newcommand{\screenshotplaceholder}[3]{%
+  \begin{figure}[htbp]
+    \centering
+    \fbox{%
+      \parbox[c][0.22\textheight][c]{0.88\linewidth}{%
+        \centering
+        \vspace{1em}
+        \textbf{Figure placeholder}\\[0.5em]
+        \textit{#2}\\[0.5em]
+        \small\texttt{(Suggested file: figures/#3)}
+        \vspace{1em}
+      }%
+    }
+    \caption{#2}
+    \label{fig:#1}
+  \end{figure}%
+}
+
+\begin{document}
+
+\title{Yelp Prototype: Restaurant Discovery and Reviews\\
+{\large FastAPI, React, MySQL, and an Agentic AI Assistant (Lab~1)}}
+
+%% Two authors on one line (same affiliation). Do not put \and inside \IEEEauthorblockN.
+\author{%
+\IEEEauthorblockN{Yashashree Shinde and Andrew Chau}\\
+\IEEEauthorblockA{Distributed Systems\\
+San Jose State University\\
+GitHub Repository: \url{https://github.com/yashashree5/Yelp-Prototype}}
+}
+
+\maketitle
+
+\begin{abstract}
+This report describes a Yelp-style web application for restaurant discovery, reviews, and owner management. The system uses a \textbf{React} frontend, a \textbf{FastAPI} backend with \textbf{MySQL}, \textbf{JWT} authentication with \textbf{bcrypt} password hashing, and an \textbf{AI assistant} endpoint that combines user-stored preferences, restaurant data, \textbf{LangChain}-style prompting, a \textbf{Groq} LLM, and \textbf{Tavily} web search. We summarize architecture, feature coverage against the assignment rubric, AI behavior, and evidence via annotated screenshot placeholders. API documentation is provided via \textbf{Swagger} at \texttt{/docs}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+FastAPI, React, MySQL, JWT, LangChain, Tavily, restaurant search, reviews, chatbot.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\subsection{Purpose and Goals}
+The goal of this project is to implement a two-persona platform: \textbf{reviewers (users)} who discover restaurants, manage profiles and preferences, write reviews, save favorites, and use an AI assistant; and \textbf{restaurant owners} who sign up, claim listings, manage restaurant profiles, and view analytics-oriented dashboards. The stack aligns with the lab specification: \textbf{Python + FastAPI + MySQL} on the server and \textbf{React} on the client, with \textbf{Swagger} (\texttt{/docs}) for API documentation and testing.
+
+\subsection{Repository Link}
+Project source code is hosted at: \url{https://github.com/yashashree5/Yelp-Prototype}.
+
+\subsection{Scope of This Report}
+This report is organized as follows. Section~II presents system design. Section~III explains the AI assistant. Section~IV maps each assignment checkpoint to implementation notes. Section~V briefly addresses non-functional requirements. Section~VI presents figures for required screenshots and API tests. Section~VII concludes. (Cross-references: Sections~\ref{sec:design}--\ref{sec:results} and Section~\ref{sec:conclusion}.)
+
+\section{System Design}
+\label{sec:design}
+
+\subsection{Architecture}
+\begin{itemize}
+  \item \textbf{Frontend:} React (Vite), Axios for HTTP, Bootstrap CSS loaded globally; primary UI uses component-level styling. Public routes include explore/search and restaurant details; authenticated routes enforce role (reviewer vs.\ owner).
+  \item \textbf{Backend:} FastAPI application mounting routers for authentication, users, restaurants, reviews, favorites, preferences, and AI chat. CORS allows the dev origin (\texttt{localhost:5173}).
+  \item \textbf{Database:} MySQL accessed via SQLAlchemy ORM; models include users, owners, restaurants, reviews, favorites, and user preferences. Schema extensions support reviewer-submitted listing history (\texttt{created\_by\_user\_id}) and larger review photo payloads after migration.
+  \item \textbf{Security:} Passwords hashed with bcrypt (via passlib); protected routes use JWT bearer tokens with role claims (\texttt{user} vs.\ \texttt{owner}).
+\end{itemize}
+
+\subsection{Major REST Areas}
+Authentication (\texttt{/auth/...}), reviewer profile and history (\texttt{/users/me}, \texttt{/users/history}), preferences (\texttt{/preferences/}), restaurants CRUD/search/claim (\texttt{/restaurants/...}), reviews (\texttt{/reviews/...}), favorites (\texttt{/favorites/...}), owner profile and dashboard (\texttt{/users/owner/...}), AI assistant (\texttt{POST /ai-assistant/chat}).
+
+\section{AI Assistant Implementation}
+\label{sec:ai}
+
+\subsection{Endpoint and Contract}
+The assistant exposes \texttt{POST /ai-assistant/chat} with JSON body \texttt{\{ "message": "...", "conversation\_history": [...] \}} and returns structured content including natural language text and optional structured restaurant recommendations for the UI (cards linking to detail pages).
+
+\subsection{Behavior}
+On each request, the service loads the authenticated reviewer's \textbf{saved preferences} from MySQL (cuisines, price range, dietary needs, ambiance, location text, sort preference). It builds a prompt that includes a dump of available restaurants from the database and optional \textbf{Tavily} web context. A \textbf{Groq}-hosted LLM generates a conversational reply; the pipeline uses \textbf{LangChain} primitives (e.g., prompt templating) as required by the lab. Multi-turn behavior is supported by passing \texttt{conversation\_history} from the client.
+
+\subsection{Limitations (Honest Assessment)}
+Ranking and filtering are primarily \textbf{LLM-guided} over an enumerated restaurant list rather than a fully separate SQL filter pipeline for every extracted entity; this is acceptable for a prototype but differs from a strict ``extract $\rightarrow$ SQL $\rightarrow$ rank'' design.
+
+\section{Assignment Checkpoints and Implementation Mapping}
+\label{sec:req}
+
+\subsection{User (Reviewer) Features}
+\begin{enumerate}
+  \item \textbf{Signup:} Name, email, password; passwords stored with bcrypt.
+  \item \textbf{Login/Logout:} JWT-based sessions; logout clears client token/role.
+  \item \textbf{Profile:} View/update fields including profile picture (stored as data URL string), country dropdown, state as two-letter abbreviation (validated on update).
+  \item \textbf{Preferences:} Cuisines, price (\$--\$\$\$\$), location/radius text, dietary, ambiance, sort preference---persisted for AI use.
+  \item \textbf{Search:} By name, cuisine, keywords (search across description/amenities/city/name), location (city; zip partially via broad search).
+  \item \textbf{Restaurant details:} Name, cuisine, location, description, hours/contact, ratings, reviews list with dates; optional review photos displayed when present.
+  \item \textbf{Add restaurant:} Reviewers can submit listings; owners can also add via the same API with owner id set server-side.
+  \item \textbf{Reviews:} Create/edit/delete own reviews; rating 1--5; server-side timestamps; optional photo attachment (data URL, size-limited on client).
+  \item \textbf{Favorites:} Toggle and dedicated favorites view.
+  \item \textbf{History:} Reviews plus restaurants the reviewer created (tracked via \texttt{created\_by\_user\_id} after DB migration).
+  \item \textbf{AI chatbot:} Floating widget for logged-in reviewers; loading state, clear chat, quick actions, linked recommendation cards.
+\end{enumerate}
+
+\subsection{Restaurant Owner Features}
+\begin{enumerate}
+  \item \textbf{Signup/Login:} Owner account with restaurant location field; JWT with owner role.
+  \item \textbf{Profile:} Owner profile update endpoints (\texttt{/users/owner/me}).
+  \item \textbf{Listing \& management:} Post restaurants; claim unowned listings; update after claim via owner manage page.
+  \item \textbf{Reviews:} Read-only for owners in UI (no delete in owner flows); dashboard lists recent reviews with optional review photos.
+  \item \textbf{Dashboard:} Counts, rating distribution, recent reviews; stretch metrics (views/sentiment) are limited in the current prototype.
+\end{enumerate}
+
+\subsection{Backend Requirements}
+FastAPI REST APIs for auth, profiles, preferences, restaurants, search, reviews, owner dashboard, and AI chat; validation and HTTP errors on main paths.
+
+\subsection{Frontend Requirements}
+Pages for explore, details, auth, profile/preferences, add restaurant, write review, AI UI; Axios usage; loading/error handling on key flows; component/page separation.
+
+\subsection{AI Requirements (Lab Text)}
+Endpoint \texttt{/ai-assistant/chat}, preferences from DB, LangChain usage, Tavily integration, conversational multi-turn support, structured recommendations in JSON for the UI.
+
+\subsection{API Documentation}
+Swagger UI at backend \texttt{/docs} (and OpenAPI JSON) satisfies the documentation requirement; alternatively a Postman collection could be exported.
+
+\subsection{Git Repository Guideline Compliance}
+\begin{itemize}
+  \item \textbf{Commit history:} Descriptive commits reflecting incremental work.
+  \item \textbf{Dependency hygiene:} \texttt{requirements.txt} for Python; \texttt{venv}/\texttt{.venv}/\texttt{\_\_pycache\_\_} excluded from version control.
+  \item \textbf{README:} Setup and run instructions for backend and frontend.
+  \item \textbf{Private repository collaborators:} Invite required course accounts per assignment before submission.
+\end{itemize}
+
+\section{Non-Functional Requirements}
+\label{sec:nfr}
+\textbf{Responsiveness:} Layout uses flexible widths; further breakpoint tuning is possible. \textbf{Accessibility:} Partial---semantic structure and keyboard polish could be strengthened (e.g., star inputs as buttons). \textbf{Performance:} Restaurant list and AI prompt scale with dataset size; production would paginate search and trim context.
+
+\section{Results and Evidence (Screenshots and API Tests)}
+\label{sec:results}
+
+Place exported screenshots under \texttt{docs/figures/} and replace placeholders with:
+\begin{verbatim}
+\includegraphics[width=0.92\linewidth]{figures/yourfile.png}
+\end{verbatim}
+
+\screenshotplaceholder{homeExplore}{Home / Explore page with search, filters, and AI chat widget visible}{home\_explore\_chatbot.png}
+
+\screenshotplaceholder{searchResults}{Restaurant search results (cards)}{search\_results.png}
+
+\screenshotplaceholder{restaurantDetails}{Restaurant details: info, hours, reviews list}{restaurant\_details.png}
+
+\screenshotplaceholder{profilePrefs}{User profile and/or preferences editor}{profile\_preferences.png}
+
+\screenshotplaceholder{writeReview}{Write review form (rating, comment, optional photo)}{write\_review.png}
+
+\screenshotplaceholder{aiChat}{AI assistant: example conversation with recommendation cards}{ai\_conversation.png}
+
+\screenshotplaceholder{favorites}{Favorites page}{favorites.png}
+
+\screenshotplaceholder{history}{History tab (reviews and restaurants added)}{history.png}
+
+\screenshotplaceholder{ownerAuth}{Owner: signup or login}{owner\_auth.png}
+
+\screenshotplaceholder{ownerDash}{Owner dashboard (analytics cards, recent reviews)}{owner\_dashboard.png}
+
+\screenshotplaceholder{ownerManage}{Owner manage restaurant / claim flow (if applicable)}{owner\_manage.png}
+
+\screenshotplaceholder{swagger}{Swagger UI (\texttt{/docs}) showing key endpoints or a successful try-it-out}{swagger\_api.png}
+
+\screenshotplaceholder{apiTests}{API test results (auth, restaurants, reviews, AI endpoint)}{api\_test\_results.png}
+
+\FloatBarrier
+\section{Conclusion}
+\label{sec:conclusion}
+The prototype meets the core Lab~1 functional requirements for reviewers and owners, integrates MySQL-backed preferences with an AI assistant endpoint, and documents the API via Swagger. Screenshot placeholders in Section~\ref{sec:results} should be replaced with captured evidence before final PDF submission.
+
+\section*{Acknowledgment}
+The authors thank course staff for requirements and feedback.
+
+\begin{thebibliography}{00}
+\bibitem{fastapi} FastAPI documentation, \url{https://fastapi.tiangolo.com/}
+\bibitem{react} React documentation, \url{https://react.dev/}
+\bibitem{langchain} LangChain documentation, \url{https://python.langchain.com/}
+\bibitem{tavily} Tavily API, \url{https://www.tavily.com/}
+\end{thebibliography}
+
+\end{document}

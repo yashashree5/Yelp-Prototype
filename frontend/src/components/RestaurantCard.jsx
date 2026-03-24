@@ -14,6 +14,18 @@ const CUISINE_IMAGES = {
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
+function formatPricingTier(tier) {
+  if (!tier && tier !== 0) return null;
+  if (typeof tier === "string") {
+    const trimmed = tier.trim();
+    if (trimmed.startsWith("$")) return trimmed;
+    const maybeNumber = Number(trimmed);
+    if (Number.isFinite(maybeNumber)) return PRICE_MAP[maybeNumber] || null;
+  }
+  if (typeof tier === "number") return PRICE_MAP[tier] || null;
+  return null;
+}
+
 const StarRating = ({ rating }) => (
   <span style={{ display: "inline-flex", gap: "2px" }}>
     {[1, 2, 3, 4, 5].map(i => (
@@ -29,7 +41,7 @@ const StarRating = ({ rating }) => (
 
 export default function RestaurantCard({ restaurant, index }) {
   const image = restaurant.photos || CUISINE_IMAGES[restaurant.cuisine] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80";
-  const price = restaurant.pricing_tier ? PRICE_MAP[restaurant.pricing_tier] : null;
+  const price = restaurant.pricing_tier ? formatPricingTier(restaurant.pricing_tier) : null;
 
   return (
     <div style={{

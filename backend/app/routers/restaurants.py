@@ -16,8 +16,11 @@ def create_restaurant(
     token_data = Depends(get_current_auth)
 ):
     owner_id = None
+    created_by_user_id = None
     if token_data["role"] == "owner":
         owner_id = token_data["principal"].id
+    elif token_data["role"] == "user":
+        created_by_user_id = token_data["principal"].id
 
     restaurant = Restaurant(
         name=data.name,
@@ -30,7 +33,8 @@ def create_restaurant(
         pricing_tier=data.pricing_tier,
         contact=data.contact,
         photos=data.photos,
-        owner_id=owner_id
+        owner_id=owner_id,
+        created_by_user_id=created_by_user_id,
     )
     db.add(restaurant)
     db.commit()
@@ -80,6 +84,11 @@ def get_restaurants(
         )
 
     return query.all()
+
+# Get unclaimed restaurants (available for owners to claim)
+@router.get("/unclaimed")
+def get_unclaimed_restaurants(db: Session = Depends(get_db)):
+    return db.query(Restaurant).filter(Restaurant.owner_id == None).all()
 
 # Get single restaurant
 @router.get("/{restaurant_id}")
@@ -133,17 +142,18 @@ def claim_restaurant(
         if not restaurant:
             raise HTTPException(status_code=404, detail="Restaurant not found")
 
-        if restaurant.owner_id is None:
-            restaurant.owner_id = current_owner.id
-            db.commit()
-            db.refresh(restaurant)
-            return {"message": "Restaurant claimed successfully", "restaurant": restaurant}
-        elif restaurant.owner_id == current_owner.id:
-            return {"message": "You already own this restaurant", "restaurant": restaurant}
-        else:
+        if restaurant.owner_id is not None and restaurant.owner_id != current_owner.id:
             raise HTTPException(status_code=400, detail="Restaurant already claimed by another owner")
+        if restaurant.owner_id == current_owner.id:
+            return {"message": "You already own this restaurant", "restaurant_id": restaurant.id}
+
+        restaurant.owner_id = current_owner.id
+        db.commit()
+        return {"message": "Restaurant claimed successfully", "restaurant_id": restaurant.id}
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to claim restaurant")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Claim failed: {str(e)}")

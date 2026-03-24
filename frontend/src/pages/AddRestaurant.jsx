@@ -15,6 +15,7 @@ export default function AddRestaurant() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [photoDataUrl, setPhotoDataUrl] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +25,7 @@ export default function AddRestaurant() {
       try {
         const amenities = (form.ambiance || []).join(",");
         const tierMap = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
-        await api.post("/restaurants/", {
+        const payload = {
           name: form.name,
           cuisine: form.cuisine,
           address: form.address,
@@ -34,7 +35,9 @@ export default function AddRestaurant() {
           contact: form.contact,
           hours: form.hours,
           pricing_tier: tierMap[form.pricing_tier] || "$$"
-        });
+        };
+        if (photoDataUrl) payload.photos = photoDataUrl;
+        await api.post("/restaurants/", payload);
       setSuccess("Restaurant added successfully!");
       setTimeout(() => navigate("/"), 1500);
     } catch {
@@ -137,6 +140,34 @@ export default function AddRestaurant() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Photo Upload */}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>Restaurant Photo</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 2 * 1024 * 1024) {
+                setError("Image must be under 2 MB.");
+                e.target.value = "";
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => setPhotoDataUrl(reader.result);
+              reader.readAsDataURL(file);
+            }}
+            style={{ fontSize: "13px", color: "#666" }}
+          />
+          {photoDataUrl && (
+            <div style={{ marginTop: "10px", position: "relative", display: "inline-block" }}>
+              <img src={photoDataUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px", border: "1px solid #e0e0e0" }} />
+              <button type="button" onClick={() => setPhotoDataUrl(null)} style={{ position: "absolute", top: 4, right: 4, background: "#d32323", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "12px", lineHeight: 1 }}>✕</button>
+            </div>
+          )}
         </div>
 
         {/* Ambiance / Amenities */}

@@ -15,8 +15,21 @@ const CUISINE_IMAGES = {
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
-export default function ChatWidget({ isLoggedIn }) {
+function formatPricingTier(tier) {
+  if (!tier && tier !== 0) return null;
+  if (typeof tier === "string") {
+    const trimmed = tier.trim();
+    if (trimmed.startsWith("$")) return trimmed;
+    const maybeNumber = Number(trimmed);
+    if (Number.isFinite(maybeNumber)) return PRICE_MAP[maybeNumber] || null;
+  }
+  if (typeof tier === "number") return PRICE_MAP[tier] || null;
+  return null;
+}
+
+export default function ChatWidget({ isLoggedIn, role }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -40,6 +53,15 @@ export default function ChatWidget({ isLoggedIn }) {
       setMessages(prev => [...prev,
         { role: "user", content: userMessage, recommendations: [] },
         { role: "assistant", content: "Please log in to get personalized restaurant recommendations! 🔐", recommendations: [] }
+      ]);
+      setInput("");
+      return;
+    }
+
+    if (role !== "user") {
+      setMessages(prev => [...prev,
+        { role: "user", content: userMessage, recommendations: [] },
+        { role: "assistant", content: "AI recommendations are available for reviewer accounts only. Please log in as a user. 🔐", recommendations: [] }
       ]);
       setInput("");
       return;
@@ -95,12 +117,17 @@ export default function ChatWidget({ isLoggedIn }) {
       {/* Chat panel */}
       {open && (
         <div style={{
-          position: "fixed", bottom: "90px", right: "24px",
-          width: "360px", height: "520px", background: "#fff",
+          position: "fixed",
+          bottom: expanded ? "20px" : "90px",
+          right: expanded ? "20px" : "24px",
+          width: expanded ? "600px" : "360px",
+          height: expanded ? "700px" : "520px",
+          background: "#fff",
           borderRadius: "12px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
           display: "flex", flexDirection: "column", zIndex: 999,
           fontFamily: "'Helvetica Neue', Arial, sans-serif",
-          overflow: "hidden", border: "1px solid #e0e0e0"
+          overflow: "hidden", border: "1px solid #e0e0e0",
+          transition: "width 0.25s ease, height 0.25s ease, bottom 0.25s ease, right 0.25s ease"
         }}>
           {/* Header */}
           <div style={{ background: "#d32323", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -109,11 +136,13 @@ export default function ChatWidget({ isLoggedIn }) {
               <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "11px" }}>Your AI Restaurant Assistant</div>
             </div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              {isLoggedIn && (
-                <Link to="/chatbot" style={{ color: "#fff", fontSize: "11px", textDecoration: "none", background: "rgba(255,255,255,0.2)", padding: "4px 8px", borderRadius: "4px" }}>
-                  Full view ↗
-                </Link>
-              )}
+              <button
+                onClick={() => setExpanded(prev => !prev)}
+                title={expanded ? "Shrink" : "Expand"}
+                style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", cursor: "pointer", fontSize: "15px", padding: "4px 8px", borderRadius: "4px", lineHeight: 1 }}
+              >
+                {expanded ? "↘" : "↗"}
+              </button>
               <button onClick={() => setMessages([{ role: "assistant", content: "👋 Hi! I'm Foody, your personal restaurant assistant. Ask me anything!", recommendations: [] }])}
                 style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "14px" }}>
                 🗑️
@@ -160,7 +189,7 @@ export default function ChatWidget({ isLoggedIn }) {
                           />
                           <div>
                             <div style={{ fontWeight: 700, fontSize: "13px", color: "#0073bb" }}>{r.name}</div>
-                            <div style={{ fontSize: "11px", color: "#666" }}>{r.cuisine} • {PRICE_MAP[r.pricing_tier] || "$$"}</div>
+                            <div style={{ fontSize: "11px", color: "#666" }}>{r.cuisine} • {formatPricingTier(r.pricing_tier) || "$$"}</div>
                             <div style={{ fontSize: "11px", color: "#f15700" }}>{"★".repeat(Math.round(r.average_rating || 0))}</div>
                           </div>
                         </div>

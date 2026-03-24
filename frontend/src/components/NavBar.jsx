@@ -37,7 +37,6 @@ export default function Navbar({ auth, setAuth }) {
                 <Link to="/favorites" style={{ textDecoration: "none", color: "#333" }}>Favorites</Link>
                 <Link to="/history" style={{ textDecoration: "none", color: "#333" }}>History</Link>
                 <Link to="/preferences" style={{ textDecoration: "none", color: "#333" }}>Preferences</Link>
-                <Link to="/chatbot" style={{ textDecoration: "none", color: "#d32323", fontWeight: 600 }}>🤖 AI Assistant</Link>
               </>
             )}
             {auth.user?.role === "owner" && (
@@ -51,9 +50,15 @@ export default function Navbar({ auth, setAuth }) {
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px", fontSize: "14px" }}>
         {auth.loggedIn ? (
           <>
-            <Link to="/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>
-              👤 {auth.user?.name || auth.user?.email}
-            </Link>
+            {auth.user?.role === "user" ? (
+              <Link to="/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>
+                👤 {auth.user?.name || auth.user?.email}
+              </Link>
+            ) : (
+              <Link to="/owner/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>
+                👤 {auth.user?.name || auth.user?.email}
+              </Link>
+            )}
             <button onClick={handleLogout} style={{
               background: "transparent", border: "1px solid #d32323", color: "#d32323",
               padding: "6px 14px", borderRadius: "4px", cursor: "pointer", fontSize: "14px"

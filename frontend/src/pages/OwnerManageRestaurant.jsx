@@ -11,12 +11,17 @@ export default function OwnerManageRestaurant() {
     name: "", cuisine: "", address: "", city: "",
     description: "", hours: "", contact: "", amenities: "", pricing_tier: "$$"
   });
+  const [existingPhoto, setExistingPhoto] = useState(null);
+  const [photoDataUrl, setPhotoDataUrl] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("profile");
+
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterRating, setFilterRating] = useState("all");
 
   useEffect(() => {
     async function fetchData() {
@@ -37,6 +42,7 @@ export default function OwnerManageRestaurant() {
           amenities: r.amenities || "",
           pricing_tier: r.pricing_tier || "$$"
         });
+        if (r.photos) setExistingPhoto(r.photos);
         setReviews(resRev.data || []);
       } catch {
         setError("Failed to load restaurant data.");
@@ -53,7 +59,7 @@ export default function OwnerManageRestaurant() {
     setSuccess("");
     setError("");
     try {
-      await api.put(`/restaurants/${id}`, {
+      const payload = {
         name: form.name,
         cuisine: form.cuisine,
         address: form.address,
@@ -63,14 +69,30 @@ export default function OwnerManageRestaurant() {
         contact: form.contact,
         amenities: form.amenities,
         pricing_tier: form.pricing_tier
-      });
+      };
+      if (photoDataUrl) payload.photos = photoDataUrl;
+      await api.put(`/restaurants/${id}`, payload);
       setSuccess("Restaurant profile updated successfully!");
+      if (photoDataUrl) {
+        setExistingPhoto(photoDataUrl);
+        setPhotoDataUrl(null);
+      }
     } catch {
       setError("Failed to update restaurant.");
     } finally {
       setSaving(false);
     }
   }
+
+  const filteredReviews = reviews
+    .filter(r => filterRating === "all" || Math.round(r.rating) === Number(filterRating))
+    .sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.created_at) - new Date(a.created_at);
+      if (sortBy === "oldest") return new Date(a.created_at) - new Date(b.created_at);
+      if (sortBy === "highest") return b.rating - a.rating;
+      if (sortBy === "lowest") return a.rating - b.rating;
+      return 0;
+    });
 
   if (loading) return <div style={{ padding: "60px", textAlign: "center", color: "#666" }}>Loading...</div>;
 
@@ -147,7 +169,7 @@ export default function OwnerManageRestaurant() {
             <input style={inputStyle} value={form.amenities} onChange={e => setForm({ ...form, amenities: e.target.value })} placeholder="Outdoor seating, Full bar, Vegetarian friendly" />
           </div>
 
-          <div style={{ marginBottom: "24px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <label style={labelStyle}>Price Range</label>
             <div style={{ display: "flex", gap: "10px" }}>
               {PRICE_OPTIONS.map(p => (
@@ -162,6 +184,40 @@ export default function OwnerManageRestaurant() {
             </div>
           </div>
 
+          {/* Photo Upload */}
+          <div style={{ marginBottom: "24px" }}>
+            <label style={labelStyle}>Restaurant Photo</label>
+            {existingPhoto && !photoDataUrl && (
+              <div style={{ marginBottom: "10px" }}>
+                <p style={{ fontSize: "12px", color: "#666", margin: "0 0 6px" }}>Current photo:</p>
+                <img src={existingPhoto} alt="Current" style={{ maxWidth: "100%", maxHeight: "180px", borderRadius: "8px", border: "1px solid #e0e0e0" }} />
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 2 * 1024 * 1024) {
+                  setError("Image must be under 2 MB.");
+                  e.target.value = "";
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => setPhotoDataUrl(reader.result);
+                reader.readAsDataURL(file);
+              }}
+              style={{ fontSize: "13px", color: "#666" }}
+            />
+            {photoDataUrl && (
+              <div style={{ marginTop: "10px", position: "relative", display: "inline-block" }}>
+                <img src={photoDataUrl} alt="Preview" style={{ maxWidth: "100%", maxHeight: "180px", borderRadius: "8px", border: "1px solid #e0e0e0" }} />
+                <button type="button" onClick={() => setPhotoDataUrl(null)} style={{ position: "absolute", top: 4, right: 4, background: "#d32323", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "12px", lineHeight: 1 }}>✕</button>
+              </div>
+            )}
+          </div>
+
           <button type="submit" disabled={saving} style={{
             width: "100%", padding: "12px", background: saving ? "#ccc" : "#d32323",
             color: "#fff", border: "none", borderRadius: "6px",
@@ -172,22 +228,59 @@ export default function OwnerManageRestaurant() {
         </form>
       )}
 
-      {/* Reviews Tab - Read Only */}
+      {/* Reviews Tab - Read Only with Filtering & Sorting */}
       {activeTab === "reviews" && (
         <div>
           <div style={{ fontSize: "12px", color: "#999", marginBottom: "16px", padding: "8px 12px", background: "#f9f9f9", borderRadius: "6px" }}>
-            👁️ Read-only — reviews can only be edited or deleted by the users who wrote them.
+            Reviews are read-only and can only be edited or deleted by the users who wrote them.
           </div>
+
+          {/* Filter & Sort Controls */}
+          {reviews.length > 0 && (
+            <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#333" }}>Sort:</label>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="highest">Highest Rated</option>
+                  <option value="lowest">Lowest Rated</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#333" }}>Filter:</label>
+                <select value={filterRating} onChange={e => setFilterRating(e.target.value)} style={selectStyle}>
+                  <option value="all">All Ratings</option>
+                  <option value="5">5 Stars</option>
+                  <option value="4">4 Stars</option>
+                  <option value="3">3 Stars</option>
+                  <option value="2">2 Stars</option>
+                  <option value="1">1 Star</option>
+                </select>
+              </div>
+              <span style={{ fontSize: "12px", color: "#999" }}>
+                Showing {filteredReviews.length} of {reviews.length} reviews
+              </span>
+            </div>
+          )}
+
           {reviews.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", background: "#f9f9f9", borderRadius: "8px", color: "#666" }}>No reviews yet.</div>
+          ) : filteredReviews.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px", background: "#f9f9f9", borderRadius: "8px", color: "#666" }}>No reviews match the selected filter.</div>
           ) : (
-            reviews.map(r => (
+            filteredReviews.map(r => (
               <div key={r.id} style={{ padding: "16px", border: "1px solid #e0e0e0", borderRadius: "8px", marginBottom: "10px", background: "#fff" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                   <span style={{ color: "#f15700", fontSize: "16px" }}>{"★".repeat(Math.round(r.rating))}{"☆".repeat(5 - Math.round(r.rating))}</span>
                   <span style={{ fontWeight: 600, color: "#333", fontSize: "14px" }}>{r.rating}/5</span>
                 </div>
                 <p style={{ margin: "0 0 8px", color: "#333", fontSize: "14px" }}>{r.comment}</p>
+                {r.photos && (
+                  <div style={{ marginBottom: "8px" }}>
+                    <img src={r.photos} alt="Review photo" style={{ width: "100%", maxWidth: "320px", maxHeight: "180px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e0e0e0" }} />
+                  </div>
+                )}
                 <div style={{ fontSize: "12px", color: "#999" }}>
                   {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : ""}
                 </div>
@@ -202,3 +295,4 @@ export default function OwnerManageRestaurant() {
 
 const labelStyle = { display: "block", fontSize: "13px", fontWeight: 700, color: "#333", marginBottom: "6px" };
 const inputStyle = { width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+const selectStyle = { padding: "6px 10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "13px", outline: "none", background: "#fff", cursor: "pointer" };

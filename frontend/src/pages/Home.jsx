@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
 import RestaurantCard from "../components/RestaurantCard.jsx";
-import RestaurantMap from "../components/RestaurantMap.jsx";
 
 const FILTERS = ["All", "Price", "Open Now", "Reservations", "Offers Delivery", "Offers Takeout"];
 const CUISINE_FILTERS = ["All", "Italian", "Chinese", "Indian", "Japanese", "Mexican", "American"];
@@ -106,11 +105,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Results + Map */}
-      <div style={{ display: "flex" }}>
-
-        {/* Left: results */}
-        <div style={{ flex: 1, padding: "0 24px", maxWidth: "820px" }}>
+      {/* Results */}
+      <div style={{ padding: "0 24px", maxWidth: "900px", margin: "0 auto" }}>
           <div style={{ padding: "16px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", margin: 0 }}>
               Best Restaurants {location ? `near ${location}` : "near San Jose, CA"}
@@ -129,15 +125,6 @@ export default function Home() {
           ) : (
             filtered.map((r, i) => <RestaurantCard key={r.id} restaurant={r} index={i} />)
           )}
-        </div>
-
-        {/* Right: Interactive Map */}
-        <div style={{
-          width: "400px", flexShrink: 0, position: "sticky", top: "60px",
-          height: "calc(100vh - 120px)", borderLeft: "1px solid #e0e0e0", overflow: "hidden", zIndex: 0
-        }}>
-          <RestaurantMap restaurants={filtered} />
-        </div>
       </div>
     </div>
   );

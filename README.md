@@ -52,6 +52,8 @@ Backend runs at `http://127.0.0.1:8000`.
 
 ## Frontend Setup
 
+The current UI does not use Google Maps (no map panel on explore or detail pages). You can skip `frontend/.env`, or keep a key only if you re-enable `RestaurantMap.jsx` later.
+
 ```bash
 cd frontend
 npm install

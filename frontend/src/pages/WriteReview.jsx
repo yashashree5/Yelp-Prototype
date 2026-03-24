@@ -17,6 +17,7 @@ export default function WriteReview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [restaurant, setRestaurant] = useState(null);
+  const [photoDataUrl, setPhotoDataUrl] = useState(null);
 
   useEffect(() => {
     api.get(`/restaurants/${restaurantId}`)
@@ -33,10 +34,16 @@ export default function WriteReview() {
     setLoading(true);
     setError("");
     try {
+      const payload = {
+        rating,
+        comment: comment.trim(),
+      };
+      if (photoDataUrl) payload.photos = photoDataUrl;
+
       if (isEdit) {
-        await api.put(`/reviews/${editId}?rating=${rating}&comment=${encodeURIComponent(comment)}`);
+        await api.put(`/reviews/${editId}`, payload);
       } else {
-        await api.post(`/reviews/?restaurant_id=${restaurantId}&rating=${rating}&comment=${encodeURIComponent(comment)}`);
+        await api.post(`/reviews/`, { ...payload, restaurant_id: restaurantId });
       }
       navigate(`/restaurant/${restaurantId}`);
     } catch (err) {
@@ -123,6 +130,55 @@ export default function WriteReview() {
           <div style={{ fontSize: "12px", color: "#999", marginTop: "4px" }}>
             {comment.length} characters
           </div>
+        </div>
+
+        {/* Optional Photo */}
+        <div style={{ marginBottom: "28px" }}>
+          <label style={{ display: "block", fontSize: "13px", fontWeight: 700, color: "#333", marginBottom: "8px" }}>
+            Optional Photo
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files && e.target.files[0];
+              if (!file) {
+                setPhotoDataUrl(null);
+                return;
+              }
+              // For the assignment/demo, we keep images small to avoid huge payloads.
+              if (file.size > 2 * 1024 * 1024) {
+                setError("Please choose an image under 2MB.");
+                return;
+              }
+              setError("");
+              const reader = new FileReader();
+              reader.onloadend = () => setPhotoDataUrl(reader.result);
+              reader.readAsDataURL(file);
+            }}
+            style={{ fontSize: "13px", color: "#666" }}
+          />
+          <div style={{ fontSize: "12px", color: "#999", marginTop: "6px" }}>
+            JPG/PNG up to 2MB
+          </div>
+          {photoDataUrl && (
+            <div style={{ marginTop: "12px" }}>
+              <img
+                src={photoDataUrl}
+                alt="Selected review"
+                style={{ width: "100%", maxHeight: "240px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e0e0e0" }}
+              />
+              <div style={{ marginTop: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setPhotoDataUrl(null)}
+                  style={{ background: "transparent", border: "1px solid #d32323", color: "#d32323", padding: "8px 14px", borderRadius: "6px", cursor: "pointer", fontWeight: 600 }}
+                >
+                  Remove photo
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Submit */}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/NavBar.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
@@ -11,11 +11,11 @@ import AddRestaurant from "./pages/AddRestaurant.jsx";
 import Preferences from "./pages/Preferences.jsx";
 import Favorites from "./pages/Favorites.jsx";
 import History from "./pages/History.jsx";
-import Chatbot from "./pages/Chatbot";
 import OwnerSignup from "./pages/OwnerSignup.jsx";
 import OwnerLogin from "./pages/OwnerLogin.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
 import OwnerManageRestaurant from "./pages/OwnerManageRestaurant.jsx";
+import OwnerProfile from "./pages/OwnerProfile.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
 
 export default function App() {
@@ -26,12 +26,18 @@ export default function App() {
   });
 
   function renderForRole(role, element) {
-    if (!auth.loggedIn) return (
+    if (!auth.loggedIn) return <Navigate to="/login" replace />;
+    if (auth.user?.role !== role) return (
       <div className="container mt-5">
-        <div className="alert alert-danger">Login required. <a href="/login">Login here</a></div>
+        <div className="alert alert-warning">You are not authorized to access this page.</div>
       </div>
     );
-    if (auth.user?.role !== role) return (
+    return element;
+  }
+
+  function renderForRoles(roles, element) {
+    if (!auth.loggedIn) return <Navigate to="/login" replace />;
+    if (!roles.includes(auth.user?.role)) return (
       <div className="container mt-5">
         <div className="alert alert-warning">You are not authorized to access this page.</div>
       </div>
@@ -56,17 +62,17 @@ export default function App() {
         {/* User protected routes */}
         <Route path="/profile" element={renderForRole("user", <Profile />)} />
         <Route path="/write-review/:id" element={renderForRole("user", <WriteReview />)} />
-        <Route path="/add-restaurant" element={renderForRole("user", <AddRestaurant />)} />
+        <Route path="/add-restaurant" element={renderForRoles(["user", "owner"], <AddRestaurant />)} />
         <Route path="/preferences" element={renderForRole("user", <Preferences />)} />
         <Route path="/favorites" element={renderForRole("user", <Favorites />)} />
         <Route path="/history" element={renderForRole("user", <History />)} />
-        <Route path="/chatbot" element={renderForRole("user", <Chatbot />)} />
 
         {/* Owner protected routes */}
         <Route path="/owner/dashboard" element={renderForRole("owner", <OwnerDashboard />)} />
+        <Route path="/owner/profile" element={renderForRole("owner", <OwnerProfile />)} />
         <Route path="/owner/restaurant/:id" element={renderForRole("owner", <OwnerManageRestaurant />)} />
       </Routes>
-      <ChatWidget isLoggedIn={auth.loggedIn} />
+      <ChatWidget isLoggedIn={auth.loggedIn} role={auth.user?.role || null} />
     </>
   );
 }
