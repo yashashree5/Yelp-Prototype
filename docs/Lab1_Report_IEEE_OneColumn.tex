@@ -1,0 +1,266 @@
+\documentclass[onecolumn,journal]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{placeins}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\begin{document}
+
+\title{Yelp Prototype: Restaurant Discovery and Reviews\\
+{\large FastAPI, React, MySQL, and an Agentic AI Assistant (Lab~1)}}
+
+\author{%
+\IEEEauthorblockN{Yashashree Shinde and Andrew Chau}\\[0.5em]
+\IEEEauthorblockA{Distributed Systems\\
+San Jose State University\\[0.5em]
+GitHub: \url{https://github.com/yashashree5/Yelp-Prototype}}
+}
+
+\maketitle
+
+\begin{abstract}
+This report describes a Yelp-style web application for restaurant discovery, reviews, and owner management. The system uses a React frontend, a FastAPI backend with MySQL, JWT authentication with bcrypt hashing, and an AI assistant combining user preferences, LangChain prompting, a Groq LLM, and Tavily web search. API documentation is provided via Swagger at \texttt{/docs}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+FastAPI, React, MySQL, JWT, LangChain, Tavily, restaurant search, reviews, chatbot.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+The goal of this project is to implement a two-persona platform: \textbf{reviewers} who discover restaurants, manage profiles/preferences, write reviews, save favorites, and use an AI assistant; and \textbf{restaurant owners} who claim listings, manage profiles, and view analytics dashboards. The stack uses Python + FastAPI + MySQL on the server and React on the client, with Swagger for API documentation.
+
+Source code: \url{https://github.com/yashashree5/Yelp-Prototype}.
+
+\section{System Design}
+\label{sec:design}
+
+\begin{itemize}
+  \item \textbf{Frontend:} React (Vite), Axios, Bootstrap CSS. Role-based routing (reviewer vs.\ owner).
+  \item \textbf{Backend:} FastAPI with routers for auth, users, restaurants, reviews, favorites, preferences, and AI chat. CORS allows \texttt{localhost:5173}.
+  \item \textbf{Database:} MySQL via SQLAlchemy ORM; models for users, owners, restaurants, reviews, favorites, and preferences.
+  \item \textbf{Security:} bcrypt password hashing (passlib); JWT bearer tokens with role claims.
+\end{itemize}
+
+\textbf{Key endpoints:} \texttt{/auth/...}, \texttt{/users/me}, \texttt{/restaurants/...}, \texttt{/reviews/...}, \texttt{/favorites/...}, \texttt{/preferences/}, \texttt{/users/owner/...}, \texttt{POST /ai-assistant/chat}.
+
+\section{AI Assistant}
+\label{sec:ai}
+
+The assistant exposes \texttt{POST /ai-assistant/chat} accepting a message and conversation history. On each request it loads the reviewer's saved preferences from MySQL, builds a prompt with restaurant data and optional Tavily web context, and sends it to a Groq-hosted LLM using LangChain prompt templating. Multi-turn dialogue is supported via conversation history from the client. Responses include natural language text and structured restaurant recommendation cards.
+
+\section{Assignment Checkpoints}
+\label{sec:req}
+
+\subsection{Reviewer Features}
+\begin{enumerate}
+  \item \textbf{Signup/Login/Logout:} bcrypt + JWT sessions.
+  \item \textbf{Profile:} View/update name, email, phone, city, state, profile picture.
+  \item \textbf{Preferences:} Cuisines, price, dietary, ambiance --- persisted for AI.
+  \item \textbf{Search:} By name, cuisine, keywords, city.
+  \item \textbf{Restaurant details:} Info, hours, ratings, reviews with photos.
+  \item \textbf{Add restaurant:} Reviewers and owners can submit listings.
+  \item \textbf{Reviews:} Create/edit/delete; rating 1--5; optional photo upload.
+  \item \textbf{Favorites:} Toggle save and dedicated favorites view.
+  \item \textbf{History:} Past reviews and restaurants added.
+  \item \textbf{AI chatbot:} Floating widget with quick actions and recommendation cards.
+\end{enumerate}
+
+\subsection{Owner Features}
+\begin{enumerate}
+  \item \textbf{Signup/Login:} Separate owner auth with JWT owner role.
+  \item \textbf{Profile:} Owner profile management.
+  \item \textbf{Claim \& Manage:} Claim unowned listings; edit restaurant details.
+  \item \textbf{Reviews:} Read-only view with filtering and sorting.
+  \item \textbf{Dashboard:} Analytics, rating distribution, sentiment analysis, recent reviews.
+\end{enumerate}
+
+\subsection{Backend, Frontend, AI, API Docs, Git}
+FastAPI REST APIs with validation; React pages with Axios and error handling; AI endpoint with LangChain + Tavily + Groq; Swagger UI at \texttt{/docs}; descriptive commits, \texttt{requirements.txt}, and README.
+
+\section{Results and Evidence}
+\label{sec:results}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/home_explore_chatbot.png}
+  \caption{Home page with restaurant listings, cuisine filters, search bar, and AI chat widget.}
+  \label{fig:homeExplore}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/search_results.png}
+  \caption{Search results filtered by ``Italian'' showing restaurant cards with ratings and details.}
+  \label{fig:searchResults}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/restaurant_details-1.png}
+  \caption{Restaurant details page --- hero image, rating, price, cuisine, address, and hours.}
+  \label{fig:restaurantDetails1}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/restaurant_details-2.png}
+  \caption{Restaurant reviews section with star ratings, comments, dates, and Edit/Delete controls.}
+  \label{fig:restaurantDetails2}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/profile_preferences-1.png}
+  \caption{User profile page with editable fields: name, email, phone, city, state, profile picture.}
+  \label{fig:profilePage}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/profile_preferences-2.png}
+  \caption{Preferences page --- cuisine, price range, dietary restrictions saved for AI recommendations.}
+  \label{fig:preferencesPage}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/write_review.png}
+  \caption{Write a Review form with star rating, comment text area, and optional photo upload.}
+  \label{fig:writeReview}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/ai_conversation.png}
+  \caption{AI Assistant --- preference-aware romantic dinner recommendations.}
+  \label{fig:aiChat1}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/ai_conversation-2.png}
+  \caption{AI Assistant --- ``Best rated near me'' with clickable restaurant cards.}
+  \label{fig:aiChat2}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/ai_conversation1.png}
+  \caption{AI Assistant --- multi-turn follow-up for Japanese cuisine.}
+  \label{fig:aiChat3}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/favorites.png}
+  \caption{Favorites page showing saved restaurants with View and Remove buttons.}
+  \label{fig:favorites}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/history.png}
+  \caption{History page --- past reviews and restaurants added by the user.}
+  \label{fig:history}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/owner_auth.png}
+  \caption{Login page with User/Business Owner tab toggle for role-based authentication.}
+  \label{fig:ownerAuth}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/owner_dashboard_png_.png}
+  \caption{Owner Dashboard --- analytics cards, rating distribution, sentiment analysis, and restaurant list.}
+  \label{fig:ownerDash}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/owner_manage-3.png}
+  \caption{Owner Dashboard --- read-only recent reviews (no delete controls for owners).}
+  \label{fig:ownerReviews}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/owner_manage.png}
+  \caption{Manage Restaurant page --- editable profile fields, cuisine, hours, amenities, pricing.}
+  \label{fig:ownerManage}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/owner_manage1.png}
+  \caption{Manage Restaurant page --- photo management and save controls.}
+  \label{fig:ownerManage2}
+\end{figure}
+
+\FloatBarrier
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/api_test_results-1.png}
+  \caption{Swagger UI --- POST /auth/user/login request with credentials.}
+  \label{fig:swagger}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/api_test_results-2.png}
+  \caption{Swagger UI --- 200 OK response with JWT access token.}
+  \label{fig:apiTest200}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/api_test_restaurants.png}
+  \caption{Swagger UI --- GET /restaurants returning 200 OK with JSON response.}
+  \label{fig:apiTestRestaurants}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/api_test_reviews.png}
+  \caption{Swagger UI --- POST /reviews returning 201 Created with review object.}
+  \label{fig:apiTestReviews}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/api_test_ai_chat.png}
+  \caption{Swagger UI --- POST /ai-assistant/chat returning 200 OK with AI recommendations.}
+  \label{fig:apiTestAIChat}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/api_test_401.png}
+  \caption{Swagger UI --- 401 Unauthorized when no token is provided.}
+  \label{fig:apiTestUnauth}
+\end{figure}
+
+\FloatBarrier
+
+\section{Conclusion}
+\label{sec:conclusion}
+The prototype meets the core Lab~1 requirements for reviewers and owners, integrates MySQL-backed preferences with an AI assistant powered by Groq and LangChain, and documents the API via Swagger. All screenshots in Section~\ref{sec:results} demonstrate working features.
+
+\section*{Acknowledgment}
+The authors thank course staff for requirements and feedback.
+
+\begin{thebibliography}{00}
+\bibitem{fastapi} FastAPI documentation, \url{https://fastapi.tiangolo.com/}
+\bibitem{react} React documentation, \url{https://react.dev/}
+\bibitem{langchain} LangChain documentation, \url{https://python.langchain.com/}
+\bibitem{tavily} Tavily API, \url{https://www.tavily.com/}
+\end{thebibliography}
+
+\end{document}

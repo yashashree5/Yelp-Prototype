@@ -5,11 +5,11 @@ from app.models.review import Review
 from app.models.restaurant import Restaurant
 from app.utils.dependencies import get_current_reviewer
 from app.models.user import User
-from app.schemas.review import ReviewCreate, ReviewUpdate
+from app.schemas.review import ReviewCreate, ReviewUpdate, ReviewResponse
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
-@router.post("/")
+@router.post("/", response_model=ReviewResponse)
 def create_review(
     data: ReviewCreate,
     db: Session = Depends(get_db),
@@ -48,7 +48,7 @@ def create_review(
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create review")
 
-@router.get("/restaurant/{restaurant_id}")
+@router.get("/restaurant/{restaurant_id}", response_model=list[ReviewResponse])
 def get_reviews(restaurant_id: int, db: Session = Depends(get_db)):
     try:
         restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
@@ -60,7 +60,7 @@ def get_reviews(restaurant_id: int, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to fetch reviews")
 
-@router.put("/{review_id}")
+@router.put("/{review_id}", response_model=ReviewResponse)
 def update_review(
     review_id: int,
     data: ReviewUpdate,

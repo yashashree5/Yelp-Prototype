@@ -6,7 +6,7 @@ from app.utils.jwt import verify_token
 from app.models.user import User
 from app.models.owner import RestaurantOwner
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/user/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 def get_current_auth(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)

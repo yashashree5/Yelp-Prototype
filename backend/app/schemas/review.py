@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -6,13 +7,24 @@ class ReviewCreate(BaseModel):
     restaurant_id: int
     rating: float
     comment: Optional[str] = None
-    # Base64 data URL (e.g. "data:image/png;base64,...") for a single uploaded photo.
     photos: Optional[str] = None
 
 
 class ReviewUpdate(BaseModel):
     rating: float
     comment: str
-    # If omitted, we keep the existing photo. If provided (even null), we overwrite.
     photos: Optional[str] = None
+
+
+class ReviewResponse(BaseModel):
+    id: int
+    restaurant_id: int
+    user_id: int
+    rating: float
+    comment: Optional[str] = None
+    photos: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
