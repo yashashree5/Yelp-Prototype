@@ -22,13 +22,13 @@ export default function Navbar({ auth, setAuth }) {
       boxShadow: "0 1px 4px rgba(0,0,0,0.08)", gap: "24px"
     }}>
       {/* Logo */}
-      <Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center" }}>
         <YelpLogo />
-      </Link>
+      </div>
 
       {/* Nav Links */}
       <div style={{ display: "flex", gap: "16px", alignItems: "center", fontSize: "14px", color: "#333" }}>
-        <span style={{ cursor: "default", fontWeight: 500 }}>Restaurants ▾</span>
+        <Link to="/" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>Restaurants ▾</Link>
         {auth.loggedIn && (
           <>
             {auth.user?.role !== "owner" && (
@@ -51,8 +51,13 @@ export default function Navbar({ auth, setAuth }) {
         {auth.loggedIn ? (
           <>
             {auth.user?.role === "user" ? (
-              <Link to="/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>
-                👤 {auth.user?.name || auth.user?.email}
+              <Link to="/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500, display: "flex", alignItems: "center", gap: "8px" }}>
+                {auth.user?.profile_pic ? (
+                  <img src={auth.user.profile_pic} alt="" style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  <span>👤</span>
+                )}
+                {auth.user?.name || auth.user?.email}
               </Link>
             ) : (
               <Link to="/owner/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>

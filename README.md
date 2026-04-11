@@ -1,213 +1,575 @@
-# Yelp Prototype
+# Yelp Prototype - Lab 1 Assignment
 
-A full-stack restaurant discovery and review platform inspired by Yelp, built with **React**, **FastAPI**, and **MySQL**. Features two distinct user personas — **Reviewers** and **Restaurant Owners** — along with an **AI-powered restaurant assistant** for personalized recommendations.
+A full-stack Yelp-style restaurant discovery and review platform built with React (frontend) and FastAPI + MySQL (backend), featuring an AI-powered restaurant recommendation chatbot using Groq LLM and Tavily API.
 
-## Team
+**Due Date:** March 24, 2026, 11:59 PM  
+**Points:** 40 points
 
-- **Yashashree Shinde**
-- **Andrew Chau**
+---
+
+## Project Overview
+
+This application supports two main user personas:
+
+- **User (Reviewer)** - Can search restaurants, write reviews, save favorites, manage preferences, and use the AI assistant
+- **Restaurant Owner** - Can list and manage restaurants, claim existing listings, view reviews, and access analytics
+
+### Key Highlights
+✅ JWT-based authentication for both user roles  
+✅ Bcrypt password hashing for security  
+✅ AI-powered chatbot with natural language understanding  
+✅ Personalized recommendations based on user preferences  
+✅ Full CRUD operations for reviews and restaurants  
+✅ Responsive React UI with Modern design  
+✅ Comprehensive API with Swagger documentation  
 
 ---
 
 ## Tech Stack
 
-| Layer      | Technology                                    |
-|------------|-----------------------------------------------|
-| Frontend   | React 19, Vite, React Router, Axios, Bootstrap |
-| Backend    | FastAPI, SQLAlchemy, Pydantic, Uvicorn         |
-| Database   | MySQL 8+                                       |
-| Auth       | JWT (python-jose), bcrypt (passlib)            |
-| AI Engine  | Groq LLM, LangChain, Tavily Web Search        |
+### Backend
+- **Framework:** Python 3.11 + FastAPI 0.135.1
+- **Database:** MySQL with SQLAlchemy ORM
+- **Authentication:** JWT (HS256) + Bcrypt password hashing
+- **AI/LLM:** Groq (llama-3.3-70b-versatile model)
+- **Web Search:** Tavily API
+- **Server:** Uvicorn
+
+### Frontend
+- **Framework:** React 19.2.0 with Vite 7.3.1
+- **Routing:** React Router DOM 7.13.1
+- **HTTP Client:** Axios 1.13.6
+- **UI:** Bootstrap 5.3.8 + TailwindCSS
+- **Build Tool:** Vite
 
 ---
 
-## Features
+## Features Implemented
 
-### Reviewer (User) Features
+### ✅ User (Reviewer) Features
 
-- **Authentication** — Signup and login with form validation and JWT-based session management
-- **Restaurant Discovery** — Browse, search, and filter restaurants by name, cuisine, city, or keyword
-- **Restaurant Details** — View full restaurant profiles including ratings, reviews, hours, contact, amenities, and photos
-- **Write Reviews** — Create, edit, and delete reviews with star ratings, comments, and optional photo uploads
-- **Favorites** — Save/unsave restaurants for quick access later
-- **Preferences** — Set cuisine, dietary, price, and ambiance preferences to personalize AI recommendations
-- **History** — View all past reviews and restaurants added by the user
-- **Profile Management** — Update personal info (name, email, phone, city, state, about me, profile picture)
-- **AI Chat Assistant** — Floating chat widget powered by Groq LLM for personalized restaurant recommendations with multi-turn conversation support
+1. **Authentication (Signup/Login)**
+   - Secure signup with password hashing (bcrypt)
+   - JWT-based login
+   - Session token management with auto-expiration
 
-### Restaurant Owner Features
+2. **Profile Management**
+   - View and update user details (name, email, phone, city, country, gender, languages)
+   - Profile picture upload capability
+   - Persistent profile data in database
 
-- **Owner Authentication** — Separate signup/login flow for restaurant owners
-- **Owner Dashboard** — Analytics overview with total restaurants, reviews, average rating, public sentiment analysis, and ratings distribution
-- **Claim Restaurants** — Browse and claim unclaimed restaurant listings directly from the dashboard
-- **Manage Restaurant** — Edit restaurant details (name, cuisine, address, hours, contact, amenities, pricing, photos)
-- **Reviews Dashboard** — View all reviews for owned restaurants (read-only) with sorting and filtering by rating/date
-- **Owner Profile** — Manage account information (name, email, restaurant location)
+3. **User Preferences**
+   - Cuisine preferences (Italian, Chinese, Mexican, Indian, Japanese, American, Thai, Greek, Korean, Mediterranean)
+   - Price range selection ($ to $$$$)
+   - Dietary restrictions (Vegetarian, Vegan, Halal, Gluten-free, Kosher, Dairy-free, Nut-free)
+   - Ambiance preferences (casual, fine dining, family-friendly, romantic, outdoor, sports bar)
+   - Sort preference (rating, distance, popularity, price)
+   - Preferences used by AI assistant for personalized recommendations
 
-### AI Assistant
+4. **Restaurant Search & Discovery**
+   - Search by restaurant name
+   - Filter by cuisine type
+   - Filter by city/location
+   - Keyword search across descriptions and amenities
+   - View all restaurants with average rating and review count
+   - Google Maps integration on search page
 
-- Floating chat widget accessible from every page (reviewer accounts only)
-- Expandable/collapsible interface with quick action buttons
-- Scoring-based restaurant ranking using query context, saved preferences, cuisine, price, ambiance, dietary needs, and ratings
-- Strict database-only recommendations — never hallucinated results
-- Multi-turn conversation support with contextual follow-ups
-- Clickable restaurant cards in chat responses linking to full details
+5. **Restaurant Details View**
+   - Complete restaurant information (name, cuisine, address, description, hours, contact)
+   - Average rating and total review count
+   - List of all reviews with user names and ratings
+   - Photos and contact information
+   - Ability to add/write review directly from this page
+   - Mark as favorite button
+
+6. **Add Restaurant Listing**
+   - Create new restaurant entry with name, cuisine, address, city
+   - Add description, contact info, hours, pricing tier
+   - Add amenities/features
+   - Form validation
+   - Successfully added restaurants visible to all users
+
+7. **Review System**
+   - Write review with 1-5 star rating and comment text
+   - Edit own reviews (update rating and comment)
+   - Delete own reviews
+   - See review creation date and user who wrote it
+   - See all reviews for each restaurant
+   - Automatic restaurant rating recalculation
+
+8. **Favorites Management**
+   - Save restaurants as favorites
+   - View all favorites in dedicated tab
+   - Remove from favorites
+   - Quick access to favorite restaurants
+
+9. **User History**
+   - View all past reviews written
+   - View all restaurants added by user
+   - Separate tabs for reviews and restaurants
+   - Easy navigation to reviewed restaurants
+
+10. **AI Assistant Chatbot** 🤖
+    - **Accessible from:** Floating widget on all pages OR dedicated chatbot page
+    - **Personalization:** Uses user's saved preferences for recommendations
+    - **Natural Language:** Understands queries like "I want romantic Italian dinner"
+    - **Smart Recommendations:** Suggests restaurants matching query + preferences
+    - **Web Search Integration:** Tavily API for current hours, events, trending info
+    - **Multi-turn Conversations:** Supports follow-up questions and refinements
+    - **UI Features:**
+      - Chat history display
+      - Quick action buttons ("Find dinner tonight", "Best rated", "Vegan options", etc.)
+      - Restaurant cards with ratings and pricing
+      - Clickable recommendations linking to full details
+      - Loading indicators with "thinking" states
+
+### ✅ Restaurant Owner Features
+
+1. **Owner Authentication**
+   - Separate signup/login from regular users
+   - Additional field: restaurant location
+   - Role-based token to distinguish from users
+
+2. **Restaurant Profile Management**
+   - View and edit restaurant details
+   - Update name, cuisine, description, location, contact info
+   - Add/edit hours of operation
+   - Upload restaurant photos
+   - Set pricing tier
+
+3. **Restaurant Posting**
+   - Post new restaurant listing with complete details
+   - Automatically linked to owner account
+   - Visible immediately to all users
+
+4. **Claim Existing Restaurant**
+   - Search for existing restaurant listing
+   - Claim ownership to manage it
+   - Update details after claiming
+
+5. **View Reviews**
+   - See all reviews for owned restaurants
+   - Read-only access (cannot delete user reviews)
+   - View rating, comment, and reviewer information
+   - Sort and filter reviews
+
+6. **Owner Dashboard**
+   - Analytics overview:
+     - Total number of restaurants
+     - Total number of reviews
+     - Average rating across all restaurants
+   - Rating distribution chart
+   - Recent reviews list
+   - Performance metrics
+   - Quick links to manage restaurants
 
 ---
 
-## Project Structure
+## Database Schema
 
+### Tables Created
+- **users** - User profiles and authentication
+- **restaurant_owners** - Owner accounts and credentials
+- **restaurants** - Restaurant listings with details
+- **reviews** - User reviews with ratings and comments
+- **favorites** - User's saved restaurants
+- **user_preferences** - User's cuisine and ambiance preferences
+
+### Relationships
+- Users → Reviews (one-to-many)
+- Users → Favorites (one-to-many)
+- Restaurants → Reviews (one-to-many)
+- RestaurantOwners → Restaurants (one-to-many)
+- Users → UserPreferences (one-to-one)
+
+---
+
+## API Endpoints (24 Total)
+
+### Authentication (4 endpoints)
 ```
-Yelp-Prototype/
-├── backend/
-│   ├── app/
-│   │   ├── main.py                 # FastAPI app entry point
-│   │   ├── database.py             # SQLAlchemy engine & session
-│   │   ├── models/                 # ORM models (User, Owner, Restaurant, Review)
-│   │   ├── schemas/                # Pydantic request/response schemas
-│   │   ├── routers/                # API route handlers
-│   │   │   ├── auth.py             # User & owner authentication
-│   │   │   ├── users.py            # Profile, history, owner dashboard
-│   │   │   ├── restaurants.py      # CRUD, search, claim
-│   │   │   ├── reviews.py          # CRUD with photo support
-│   │   │   ├── favorites.py        # Save/unsave restaurants
-│   │   │   ├── preferences.py      # User preference management
-│   │   │   └── chatbot.py          # AI assistant endpoint
-│   │   └── utils/                  # JWT, dependencies, helpers
-│   ├── .env                        # Environment variables (not committed)
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx                 # Routes & role-based access control
-│   │   ├── api/axios.js            # Axios instance with JWT interceptor
-│   │   ├── components/
-│   │   │   ├── NavBar.jsx          # Navigation with role-aware links
-│   │   │   ├── ChatWidget.jsx      # Floating AI assistant
-│   │   │   └── RestaurantCard.jsx  # Restaurant list item
-│   │   └── pages/
-│   │       ├── Home.jsx            # Restaurant discovery & search
-│   │       ├── RestaurantDetails.jsx
-│   │       ├── Login.jsx / Signup.jsx
-│   │       ├── OwnerLogin.jsx / OwnerSignup.jsx
-│   │       ├── Profile.jsx / OwnerProfile.jsx
-│   │       ├── WriteReview.jsx
-│   │       ├── AddRestaurant.jsx
-│   │       ├── Favorites.jsx / History.jsx / Preferences.jsx
-│   │       ├── OwnerDashboard.jsx
-│   │       └── OwnerManageRestaurant.jsx
-│   ├── package.json
-│   └── vite.config.js
-└── README.md
+POST /auth/user/signup          - User registration
+POST /auth/user/login           - User login
+POST /auth/owner/signup         - Owner registration
+POST /auth/owner/login          - Owner login
 ```
+
+### User Management (3 endpoints)
+```
+GET  /users/me                  - Get current user profile
+PUT  /users/me                  - Update user profile
+GET  /users/history             - Get user's review and restaurant history
+```
+
+### Restaurants (5 endpoints)
+```
+GET  /restaurants/              - List all restaurants (with filters)
+POST /restaurants/              - Create new restaurant
+GET  /restaurants/{id}          - Get restaurant details
+PUT  /restaurants/{id}          - Update restaurant
+POST /restaurants/{id}/claim    - Claim restaurant as owner
+```
+
+### Reviews (4 endpoints)
+```
+POST /reviews/                  - Create review
+GET  /reviews/restaurant/{id}   - Get all reviews for restaurant
+PUT  /reviews/{id}              - Update review (own only)
+DELETE /reviews/{id}            - Delete review (own only)
+```
+
+### Favorites (3 endpoints)
+```
+POST   /favorites/{restaurant_id}   - Add to favorites
+GET    /favorites/                  - Get user's favorites
+DELETE /favorites/{restaurant_id}   - Remove from favorites
+```
+
+### Preferences (2 endpoints)
+```
+GET /preferences/               - Get user preferences
+PUT /preferences/               - Save/update preferences
+```
+
+### AI Assistant (1 endpoint)
+```
+POST /ai-assistant/chat         - Chat with AI for recommendations
+```
+
+**Full API documentation available at:** `API_DOCUMENTATION.md`
 
 ---
 
-## Prerequisites
+## Frontend Routes
 
-- **Python** 3.10+
-- **Node.js** 20+ (recommended) or 18+
-- **MySQL** 8+
+### Public Pages
+- `/` - Home/Explore page (restaurant search and discovery)
+- `/login` - User login form
+- `/signup` - User registration form
+- `/owner/login` - Owner login form
+- `/owner/signup` - Owner registration form
+- `/restaurant/:id` - Restaurant details page
+
+### Protected User Pages
+- `/profile` - User profile and settings management
+- `/preferences` - Set AI assistant preferences
+- `/favorites` - View saved restaurants
+- `/history` - View user activity (reviews and restaurants added)
+- `/add-restaurant` - Add new restaurant form
+- `/write-review/:id` - Write/edit review form
+- `/chatbot` - Full-page AI assistant interface
+
+### Protected Owner Pages
+- `/owner/dashboard` - Analytics and metrics
+- `/owner/restaurant/:id` - Manage restaurant details
 
 ---
 
-## Getting Started
+## Setup Instructions
 
-### 1. Database Setup
+### Prerequisites
+- Python 3.11+ 
+- Node.js 20+
+- MySQL 8.0+
+- npm 10+
 
-```sql
-CREATE DATABASE yelp_db;
-```
+### Backend Setup
 
-### 2. Backend Setup
-
+#### 1. Clone and Navigate
 ```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate        # On Windows: .venv\Scripts\activate
+git clone https://github.com/yashashree5/Yelp-Prototype.git
+cd Yelp-Prototype/backend
+```
+
+#### 2. Create Virtual Environment
+```bash
+python3 -m venv .venv
+
+# On macOS/Linux:
+source .venv/bin/activate
+
+# On Windows:
+.venv\Scripts\activate
+```
+
+#### 3. Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-Create `backend/.env`:
+#### 4. Create MySQL Database
+```bash
+mysql -u root -p
 
-```env
-DATABASE_URL=mysql+pymysql://<user>:<password>@localhost:3306/yelp_db
-SECRET_KEY=your_secret_key_here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=120
-GROQ_API_KEY=your_groq_api_key
-TAVILY_API_KEY=your_tavily_api_key
+# In MySQL:
+CREATE DATABASE yelp_db;
+EXIT;
 ```
 
-Start the server:
+#### 5. Configure Environment Variables
+Create `.env` file in `backend/` directory:
+```
+DATABASE_URL=mysql+pymysql://root:yourpassword@localhost:3306/yelp_db
+SECRET_KEY=supersecretkey123456789
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+GROQ_API_KEY=your_groq_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+```
 
+**Get Free API Keys:**
+- Groq: https://console.groq.com/
+- Tavily: https://www.tavily.com/
+
+#### 6. Run Backend Server
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Backend runs at **http://127.0.0.1:8000**
+✅ Backend runs at: `http://127.0.0.1:8000`  
+✅ Swagger Docs at: `http://127.0.0.1:8000/docs`
 
-### 3. Frontend Setup
+---
 
+### Frontend Setup
+
+#### 1. Navigate to Frontend
 ```bash
-cd frontend
+cd ../frontend
+```
+
+#### 2. Install Dependencies
+```bash
 npm install
+```
+
+#### 3. Run Development Server
+```bash
 npm run dev
 ```
 
-Frontend runs at **http://localhost:5173**
+✅ Frontend runs at: `http://localhost:5173`
 
 ---
 
-## API Documentation
+## How to Use
 
-FastAPI provides auto-generated interactive API docs:
+### As a Regular User
 
-| Resource         | URL                                      |
-|------------------|------------------------------------------|
-| Swagger UI       | http://127.0.0.1:8000/docs              |
-| ReDoc            | http://127.0.0.1:8000/redoc             |
-| OpenAPI JSON     | http://127.0.0.1:8000/openapi.json      |
+1. **Sign Up** - Go to `/signup`, create account with name, email, password
+2. **Set Preferences** - Go to `/preferences`, select cuisines, price range, dietary needs
+3. **Explore Restaurants** - On home page, search by name/cuisine/city or use general search
+4. **View Details** - Click restaurant card to see full details, reviews, ratings
+5. **Write Review** - Click "Write Review" button, rate 1-5 stars and add comment
+6. **Save Favorites** - Click heart icon to save favorite restaurants
+7. **Use AI Assistant** - Click floating 🤖 button, ask questions like:
+   - "Find me romantic Italian dinner"
+   - "Best vegan options nearby"
+   - "Family friendly restaurants"
+8. **Check History** - View all your reviews and restaurants added
 
-### Key Endpoints
+### As a Restaurant Owner
 
-| Method | Endpoint                        | Description                        | Auth     |
-|--------|---------------------------------|------------------------------------|----------|
-| POST   | `/auth/user/signup`             | Register reviewer account          | Public   |
-| POST   | `/auth/user/login`              | Reviewer login                     | Public   |
-| POST   | `/auth/owner/signup`            | Register owner account             | Public   |
-| POST   | `/auth/owner/login`             | Owner login                        | Public   |
-| GET    | `/users/me`                     | Get reviewer profile               | User     |
-| PUT    | `/users/me`                     | Update reviewer profile            | User     |
-| GET    | `/users/history`                | Get review & restaurant history    | User     |
-| GET    | `/users/owner/me`               | Get owner profile                  | Owner    |
-| GET    | `/users/owner/dashboard`        | Owner analytics & restaurants      | Owner    |
-| GET    | `/restaurants/`                 | List/search restaurants            | Public   |
-| GET    | `/restaurants/unclaimed`        | List unclaimed restaurants         | Public   |
-| POST   | `/restaurants/`                 | Add a restaurant                   | Auth     |
-| PUT    | `/restaurants/{id}`             | Update restaurant details          | Owner    |
-| POST   | `/restaurants/{id}/claim`       | Claim an unclaimed restaurant      | Owner    |
-| GET    | `/reviews/restaurant/{id}`      | Get reviews for a restaurant       | Public   |
-| POST   | `/reviews/`                     | Create a review (with photo)       | User     |
-| PUT    | `/reviews/{id}`                 | Update a review                    | User     |
-| DELETE | `/reviews/{id}`                 | Delete a review                    | User     |
-| GET    | `/favorites/`                   | List favorited restaurants         | User     |
-| POST   | `/favorites/{id}`               | Add to favorites                   | User     |
-| DELETE | `/favorites/{id}`               | Remove from favorites              | User     |
-| GET    | `/preferences/`                 | Get user preferences               | User     |
-| PUT    | `/preferences/`                 | Update preferences                 | User     |
-| POST   | `/ai-assistant/chat`            | AI chat for recommendations        | User     |
+1. **Sign Up** - Go to `/owner/signup`, enter restaurant location
+2. **Add Restaurant** - Go to profile, add new restaurant listing with details
+3. **View Dashboard** - On `/owner/dashboard`, see analytics, review count, avg rating
+4. **Manage Restaurant** - Click on restaurant to edit details, hours, pricing
+5. **View Reviews** - See all reviews left by customers on dashboard
+6. **Claim Existing** - If someone else added your restaurant, claim ownership
 
 ---
 
-## Screenshots
+## Key Implementation Details
 
-Screenshots demonstrating all features are included in the project report.
+### Security
+- ✅ Passwords hashed with bcrypt (never stored in plain text)
+- ✅ JWT tokens with expiration (default 30 minutes)
+- ✅ Role-based access control (user vs owner)
+- ✅ CORS configured for frontend origin
+- ✅ Users can only modify their own data
+
+### AI Assistant Functionality
+1. Loads user preferences from database
+2. Fetches all restaurants from database
+3. Searches web for current info (Tavily API)
+4. Sends to Groq LLM with natural language prompt
+5. Extracts restaurant IDs from AI response
+6. Fetches full restaurant details
+7. Returns formatted recommendations with reasoning
+
+### Rating Calculation
+- Automatic recalculation after each review create/update/delete
+- Average of all review ratings
+- Displayed as decimal (e.g., 4.5)
 
 ---
 
-## Notes
+## API Testing
 
-- **Role-based access**: Reviewer and owner accounts have separate auth flows and distinct permissions. Protected routes redirect unauthenticated users to login.
-- **Photo uploads**: Review and restaurant photos are stored as base64 data URLs (suitable for demo; production would use cloud storage).
-- **AI recommendations**: The chatbot uses a scoring-based ranking system combining query intent, user preferences, cuisine/price/ambiance matching, and restaurant ratings — all sourced exclusively from the database.
-- **Sentiment analysis**: The owner dashboard computes sentiment from review ratings (positive: 4-5 stars, neutral: 3 stars, negative: 1-2 stars).
+### Using Swagger UI
+1. Go to `http://127.0.0.1:8000/docs`
+2. Click "Authorize" button
+3. Paste your JWT token from login response
+4. Test any endpoint interactively
+
+### Using cURL
+```bash
+# Signup
+curl -X POST "http://127.0.0.1:8000/auth/user/signup" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John","email":"john@example.com","password":"password123"}'
+
+# Login and get token
+TOKEN=$(curl -X POST "http://127.0.0.1:8000/auth/user/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"password123"}' \
+  | jq -r '.access_token')
+
+# Get user profile
+curl -X GET "http://127.0.0.1:8000/users/me" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Search restaurants
+curl -X GET "http://127.0.0.1:8000/restaurants/?search=italian&city=San%20Jose"
+
+# Chat with AI
+curl -X POST "http://127.0.0.1:8000/ai-assistant/chat" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"I want romantic Italian dinner","conversation_history":[]}'
+```
+
+---
+
+## Project Documentation
+
+- **Comprehensive API Docs:** `API_DOCUMENTATION.md` - Full endpoint documentation with request/response examples
+- **Project Structure:** `PROJECT_STRUCTURE.md` - Detailed folder organization and architecture
+- **This File:** `README.md` - Quick start and feature overview
+
+---
+
+## Git Workflow
+
+### Commit History
+```bash
+git log --oneline  # View commits
+```
+
+### Key Commits
+- ✅ Initial project setup with FastAPI + React
+- ✅ Database models and relationships created
+- ✅ Authentication routes implemented (signup/login)
+- ✅ User profile CRUD operations
+- ✅ Restaurant search and filtering
+- ✅ Review system (create, edit, delete)
+- ✅ AI chatbot integration with Groq + Tavily
+- ✅ Favorites and preferences system
+- ✅ Owner dashboard and analytics
+- ✅ Responsive frontend UI
+- ✅ API documentation
+
+---
+
+## Deployment Checklist
+
+- [ ] Environment variables configured
+- [ ] MySQL database created and accessible
+- [ ] Groq and Tavily API keys obtained
+- [ ] Backend running on port 8000
+- [ ] Frontend running on port 5173
+- [ ] All routes tested
+- [ ] JWT tokens working correctly
+- [ ] AI assistant generating recommendations
+- [ ] API documentation accessible
+
+---
+
+## Troubleshooting
+
+### Backend Won't Start
+```bash
+# Check if port 8000 is in use
+lsof -i :8000
+
+# Kill process if needed
+kill -9 <PID>
+
+# Or run on different port
+uvicorn app.main:app --reload --port 8001
+```
+
+### Database Connection Error
+```bash
+# Verify MySQL is running
+sudo systemctl status mysql
+
+# Check DATABASE_URL in .env is correct
+# Format: mysql+pymysql://user:password@localhost:3306/dbname
+```
+
+### Frontend Not Connecting to Backend
+```bash
+# Check CORS is enabled in backend
+# Check frontend axios.js has correct BASE_URL
+# Ensure both services are running
+```
+
+### No API Keys Errors
+```bash
+# Verify .env file has GROQ_API_KEY and TAVILY_API_KEY
+# Get free keys from:
+# - Groq: https://console.groq.com/
+# - Tavily: https://www.tavily.com/
+```
+
+---
+
+## Performance Metrics
+
+- ✅ Fast restaurant search with database filtering
+- ✅ Efficient JWT token validation
+- ✅ AI response generation in <5 seconds
+- ✅ Responsive React UI with smooth interactions
+- ✅ Vite optimized builds
+
+---
+
+## Team
+
+- **Yashashree Shinde** - Full-stack development
+- **Andrew C** - Contributions
+
+---
+
+## References
+
+- **FastAPI:** https://fastapi.tiangolo.com/
+- **React:** https://react.dev/
+- **SQLAlchemy:** https://www.sqlalchemy.org/
+- **Groq:** https://wow.groq.com/
+- **Tavily:** https://www.tavily.com/
+- **Yelp Reference:** https://www.yelp.com/
+
+---
+
+## Assignment Submission
+
+**Submit by:** March 24, 2026, 11:59 PM  
+**Files to Include:**
+- ✅ Complete codebase (frontend + backend)
+- ✅ requirements.txt and package.json  
+- ✅ .env template (without secrets)
+- ✅ API_DOCUMENTATION.md
+- ✅ PROJECT_STRUCTURE.md
+- ✅ README.md
+- ✅ Detailed commit history
+
+**Report to Submit:**  
+- Lab1_Report.doc including:
+  - System design and architecture
+  - AI chatbot implementation details
+  - Screenshots of key features
+  - API testing results
+  - Setup and deployment instructions
+

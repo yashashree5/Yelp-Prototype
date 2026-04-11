@@ -29,7 +29,12 @@ export default function Login({ setAuth }) {
       const res = await api.post("/auth/user/login", { email: userEmail, password: userPassword });
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("role", "user");
-      setAuth({ loggedIn: true, user: { email: userEmail, role: "user" } });
+      try {
+        const profile = await api.get("/users/me");
+        setAuth({ loggedIn: true, user: { email: userEmail, role: "user", name: profile.data.name, profile_pic: profile.data.profile_pic } });
+      } catch {
+        setAuth({ loggedIn: true, user: { email: userEmail, role: "user" } });
+      }
       navigate("/");
     } catch {
       setUserError("Invalid email or password.");

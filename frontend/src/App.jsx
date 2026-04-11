@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { api } from "./api/axios";
 import Navbar from "./components/NavBar.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
@@ -24,6 +25,15 @@ export default function App() {
     const role = localStorage.getItem("role") || "user";
     return token ? { loggedIn: true, user: { role } } : { loggedIn: false, user: null };
   });
+
+  useEffect(() => {
+    if (!auth.loggedIn || auth.user?.profile_pic !== undefined) return;
+    const role = auth.user?.role;
+    const endpoint = role === "owner" ? "/users/owner/me" : "/users/me";
+    api.get(endpoint).then(res => {
+      setAuth(prev => ({ ...prev, user: { ...prev.user, name: res.data.name, profile_pic: res.data.profile_pic } }));
+    }).catch(() => {});
+  }, [auth.loggedIn]);
 
   function renderForRole(role, element) {
     if (!auth.loggedIn) return <Navigate to="/login" replace />;
