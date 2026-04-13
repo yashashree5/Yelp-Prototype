@@ -1,69 +1,65 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models.favorite import Favorite
-from app.models.restaurant import Restaurant
+from app.database import DuplicateKeyError, create_with_increment, db, sanitize_document, utc_now
 from app.utils.dependencies import get_current_reviewer
-from app.models.user import User
 
 router = APIRouter(prefix="/favorites", tags=["Favorites"])
 
 @router.post("/{restaurant_id}")
 def add_favorite(
     restaurant_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_reviewer)
+    current_user: dict = Depends(get_current_reviewer)
 ):
     try:
-        restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+        restaurant = db.restaurants.find_one({"id": restaurant_id})
         if not restaurant:
             raise HTTPException(status_code=404, detail="Restaurant not found")
 
-        existing = db.query(Favorite).filter(
-            Favorite.user_id == current_user.id,
-            Favorite.restaurant_id == restaurant_id
-        ).first()
-        if existing:
-            raise HTTPException(status_code=400, detail="Already in favorites")
-
-        fav = Favorite(user_id=current_user.id, restaurant_id=restaurant_id)
-        db.add(fav)
-        db.commit()
+        create_with_increment(
+            "favorites",
+            {
+                "user_id": current_user["id"],
+                "restaurant_id": restaurant_id,
+                "created_at": utc_now(),
+            },
+        )
         return {"message": "Added to favorites"}
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Already in favorites")
     except HTTPException:
         raise
     except Exception:
-        db.rollback()
         raise HTTPException(status_code=500, detail="Failed to add favorite")
 
 @router.get("/")
 def list_favorites(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_reviewer)
+    current_user: dict = Depends(get_current_reviewer)
 ):
     try:
-        favs = db.query(Favorite).filter(Favorite.user_id == current_user.id).all()
+        favs = [
+            sanitize_document(f)
+            for f in db.favorites.find({"user_id": current_user["id"]}).sort("created_at", -1)
+        ]
         result = []
         for f in favs:
-            r = db.query(Restaurant).filter(Restaurant.id == f.restaurant_id).first()
+            r = sanitize_document(db.restaurants.find_one({"id": f["restaurant_id"]}))
             restaurant_data = None
             if r:
                 restaurant_data = {
-                    "id": r.id,
-                    "name": r.name,
-                    "cuisine": r.cuisine,
-                    "city": r.city,
-                    "address": r.address,
-                    "average_rating": r.average_rating,
-                    "review_count": r.review_count,
-                    "description": r.description,
-                    "pricing_tier": r.pricing_tier,
-                    "photos": r.photos
+                    "id": r.get("id"),
+                    "name": r.get("name"),
+                    "cuisine": r.get("cuisine"),
+                    "city": r.get("city"),
+                    "address": r.get("address"),
+                    "average_rating": r.get("average_rating", 0),
+                    "review_count": r.get("review_count", 0),
+                    "description": r.get("description"),
+                    "pricing_tier": r.get("pricing_tier"),
+                    "photos": r.get("photos"),
                 }
             result.append({
-                "id": f.id,
-                "restaurant_id": f.restaurant_id,
-                "created_at": f.created_at.isoformat() if f.created_at else None,
+                "id": f.get("id"),
+                "restaurant_id": f.get("restaurant_id"),
+                "created_at": f.get("created_at").isoformat() if f.get("created_at") else None,
                 "restaurant": restaurant_data
             })
         return result
@@ -73,22 +69,18 @@ def list_favorites(
 @router.delete("/{restaurant_id}")
 def remove_favorite(
     restaurant_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_reviewer)
+    current_user: dict = Depends(get_current_reviewer)
 ):
     try:
-        fav = db.query(Favorite).filter(
-            Favorite.user_id == current_user.id,
-            Favorite.restaurant_id == restaurant_id
-        ).first()
+        fav = db.favorites.find_one(
+            {"user_id": current_user["id"], "restaurant_id": restaurant_id}
+        )
         if not fav:
             raise HTTPException(status_code=404, detail="Favorite not found")
 
-        db.delete(fav)
-        db.commit()
+        db.favorites.delete_one({"_id": fav["_id"]})
         return {"message": "Removed from favorites"}
     except HTTPException:
         raise
     except Exception:
-        db.rollback()
         raise HTTPException(status_code=500, detail="Failed to remove favorite")

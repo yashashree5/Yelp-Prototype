@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-import app.models
+from app.database import ensure_indexes
 from app.routers import auth, users, restaurants, reviews, favorites, preferences, chatbot
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="Yelp Backend")
+
+
+@app.on_event("startup")
+def startup_event():
+    ensure_indexes()
 
 app.add_middleware(
     CORSMiddleware,
