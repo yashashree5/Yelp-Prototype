@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 
 from dotenv import load_dotenv
 from pymongo import ASCENDING, DESCENDING, MongoClient, ReturnDocument
@@ -17,7 +17,8 @@ db: Database = client[MONGODB_DB]
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    # Use naive UTC so values compare cleanly with PyMongo-returned naive datetimes.
+    return datetime.utcnow()
 
 
 def ensure_indexes() -> None:

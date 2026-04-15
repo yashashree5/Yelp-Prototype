@@ -41,7 +41,7 @@ def create_review(
         )
         _update_restaurant_rating(data.restaurant_id)
 
-        return review
+        return sanitize_document(review)
     except HTTPException:
         raise
     except Exception:

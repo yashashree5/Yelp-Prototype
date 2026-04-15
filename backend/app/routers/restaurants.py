@@ -37,7 +37,7 @@ def create_restaurant(
             "created_at": utc_now(),
         },
     )
-    return restaurant
+    return sanitize_document(restaurant)
 
 # Get all restaurants with keyword search
 @router.get("/")
