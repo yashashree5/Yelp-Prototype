@@ -1,24 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
-import app.models
+from app.database import ensure_indexes
 from app.routers import auth, users, favorites, preferences, chatbot
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Yelp User Service")
-    Base.metadata.create_all(bind=engine)
+
+    @app.on_event("startup")
+    def startup():
+        ensure_indexes()
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # User-facing endpoints (includes both user+owner auth routes for now).
     app.include_router(auth.router)
     app.include_router(users.router)
     app.include_router(favorites.router)
@@ -33,4 +34,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

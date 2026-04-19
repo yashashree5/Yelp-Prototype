@@ -41,9 +41,9 @@ export default function WriteReview() {
       if (photoDataUrl) payload.photos = photoDataUrl;
 
       if (isEdit) {
-        await api.put(`/reviews/${editId}`, payload);
+        await api.put(`/reviews/async/update/${editId}`, payload);
       } else {
-        await api.post(`/reviews/`, { ...payload, restaurant_id: restaurantId });
+        await api.post(`/reviews/async/create`, { ...payload, restaurant_id: Number(restaurantId) });
       }
       navigate(`/restaurant/${restaurantId}`);
     } catch (err) {

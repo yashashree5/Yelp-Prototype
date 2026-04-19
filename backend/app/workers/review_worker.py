@@ -1,128 +1,126 @@
 import json
 import logging
+import time
 
-from sqlalchemy.orm import Session
-
-from app.database import SessionLocal
-from app.models.restaurant import Restaurant
-from app.models.review import Review
-from app.models.review_event import ReviewEvent
+from app.database import db, sanitize_document, utc_now
 from app.utils.kafka_client import create_consumer
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("review-worker")
 
 
-def recalc_restaurant_metrics(db: Session, restaurant_id: int) -> None:
-    reviews = db.query(Review).filter(Review.restaurant_id == restaurant_id).all()
-    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
-    if not restaurant:
-        return
-    restaurant.review_count = len(reviews)
-    restaurant.average_rating = (sum(r.rating for r in reviews) / len(reviews)) if reviews else 0
-
-
-def process_create(db: Session, payload: dict) -> dict:
-    review = Review(
-        restaurant_id=payload["restaurant_id"],
-        user_id=payload["user_id"],
-        rating=payload["rating"],
-        comment=payload.get("comment"),
-        photos=payload.get("photos"),
+def recalc_restaurant_metrics(restaurant_id: int) -> None:
+    reviews = list(db.reviews.find({"restaurant_id": restaurant_id}))
+    count = len(reviews)
+    avg = (sum(r["rating"] for r in reviews) / count) if count else 0.0
+    db.restaurants.update_one(
+        {"id": restaurant_id},
+        {"$set": {"review_count": count, "average_rating": round(avg, 2)}},
     )
-    db.add(review)
-    db.flush()
-    recalc_restaurant_metrics(db, payload["restaurant_id"])
-    return {"review_id": review.id, "restaurant_id": payload["restaurant_id"]}
 
 
-def process_update(db: Session, payload: dict) -> dict:
-    review = db.query(Review).filter(Review.id == payload["review_id"]).first()
+def process_create(payload: dict) -> dict:
+    from app.database import get_next_id
+    review_id = get_next_id("reviews")
+    review = {
+        "id": review_id,
+        "restaurant_id": payload["restaurant_id"],
+        "user_id": payload["user_id"],
+        "rating": payload["rating"],
+        "comment": payload.get("comment"),
+        "photos": payload.get("photos"),
+        "created_at": utc_now(),
+    }
+    db.reviews.insert_one(review)
+    recalc_restaurant_metrics(payload["restaurant_id"])
+    logger.info("review.created: review_id=%s restaurant_id=%s", review_id, payload["restaurant_id"])
+    return {"review_id": review_id, "restaurant_id": payload["restaurant_id"]}
+
+
+def process_update(payload: dict) -> dict:
+    review = sanitize_document(db.reviews.find_one({"id": payload["review_id"]}))
     if not review:
         raise ValueError("Review not found")
-    if review.user_id != payload["user_id"]:
+    if review["user_id"] != payload["user_id"]:
         raise PermissionError("Not authorized to update this review")
-    review.rating = payload["rating"]
-    review.comment = payload.get("comment")
-    review.photos = payload.get("photos")
-    recalc_restaurant_metrics(db, review.restaurant_id)
-    return {"review_id": review.id, "restaurant_id": review.restaurant_id}
+    db.reviews.update_one(
+        {"id": payload["review_id"]},
+        {"$set": {
+            "rating": payload["rating"],
+            "comment": payload.get("comment"),
+            "photos": payload.get("photos"),
+            "updated_at": utc_now(),
+        }},
+    )
+    recalc_restaurant_metrics(review["restaurant_id"])
+    logger.info("review.updated: review_id=%s", payload["review_id"])
+    return {"review_id": payload["review_id"], "restaurant_id": review["restaurant_id"]}
 
 
-def process_delete(db: Session, payload: dict) -> dict:
-    review = db.query(Review).filter(Review.id == payload["review_id"]).first()
+def process_delete(payload: dict) -> dict:
+    review = sanitize_document(db.reviews.find_one({"id": payload["review_id"]}))
     if not review:
         raise ValueError("Review not found")
-    if review.user_id != payload["user_id"]:
+    if review["user_id"] != payload["user_id"]:
         raise PermissionError("Not authorized to delete this review")
-    restaurant_id = review.restaurant_id
-    db.delete(review)
-    db.flush()
-    recalc_restaurant_metrics(db, restaurant_id)
+    restaurant_id = review["restaurant_id"]
+    db.reviews.delete_one({"id": payload["review_id"]})
+    recalc_restaurant_metrics(restaurant_id)
+    logger.info("review.deleted: review_id=%s", payload["review_id"])
     return {"review_id": payload["review_id"], "restaurant_id": restaurant_id}
 
 
-def update_event_status(
-    db: Session,
-    event_id: str,
-    status: str,
-    result: dict | None = None,
-    error: str | None = None,
-) -> None:
-    event_row = db.query(ReviewEvent).filter(ReviewEvent.event_id == event_id).first()
-    if not event_row:
-        logger.warning("No review_event row found for event_id=%s", event_id)
-        return
-    event_row.status = status
+def update_event_status(event_id: str, status: str, result: dict = None, error: str = None) -> None:
+    update = {"status": status}
     if result is not None:
-        event_row.result = json.dumps(result)
+        update["result"] = json.dumps(result)
     if error is not None:
-        event_row.error = error
+        update["error"] = error
+    db.review_events.update_one({"event_id": event_id}, {"$set": update})
 
 
 def process_message(topic: str, payload: dict) -> None:
     event_id = payload.get("event_id")
-    db = SessionLocal()
     try:
-        update_event_status(db, event_id, "processing")
-        db.flush()
-
+        update_event_status(event_id, "processing")
         if topic == "review.created":
-            result = process_create(db, payload)
+            result = process_create(payload)
         elif topic == "review.updated":
-            result = process_update(db, payload)
+            result = process_update(payload)
         elif topic == "review.deleted":
-            result = process_delete(db, payload)
+            result = process_delete(payload)
         else:
             raise ValueError(f"Unsupported topic: {topic}")
-
-        update_event_status(db, event_id, "completed", result=result)
-        db.commit()
+        update_event_status(event_id, "completed", result=result)
         logger.info("Processed event %s topic=%s", event_id, topic)
     except Exception as exc:
-        db.rollback()
+        update_event_status(event_id, "failed", error=str(exc))
+        logger.exception("Failed event %s topic=%s: %s", event_id, topic, exc)
+
+
+def create_consumer_with_retry(retries: int = 10, delay: int = 5):
+    """Retry connecting to Kafka until it's ready."""
+    for attempt in range(1, retries + 1):
         try:
-            update_event_status(db, event_id, "failed", error=str(exc))
-            db.commit()
-        except Exception:
-            db.rollback()
-        logger.exception("Failed processing event %s topic=%s: %s", event_id, topic, exc)
-    finally:
-        db.close()
+            logger.info("Connecting to Kafka (attempt %d/%d)...", attempt, retries)
+            consumer = create_consumer(
+                topics=["review.created", "review.updated", "review.deleted"],
+                group_id="review-worker-group",
+            )
+            logger.info("Successfully connected to Kafka!")
+            return consumer
+        except Exception as exc:
+            logger.warning("Kafka not ready yet: %s. Retrying in %ds...", exc, delay)
+            time.sleep(delay)
+    raise RuntimeError("Could not connect to Kafka after multiple retries")
 
 
 def run() -> None:
-    consumer = create_consumer(
-        topics=["review.created", "review.updated", "review.deleted"],
-        group_id="review-worker-group",
-    )
-    logger.info("Review worker started and listening to review topics")
-
+    consumer = create_consumer_with_retry()
+    logger.info("Review worker started — listening to review topics")
     for message in consumer:
         process_message(message.topic, message.value)
 
 
 if __name__ == "__main__":
     run()
-

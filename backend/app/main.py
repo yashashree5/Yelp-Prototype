@@ -1,10 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-import app.models
-from app.routers import auth, users, restaurants, reviews, review_events, favorites, preferences, chatbot
 from app.database import ensure_indexes
-from app.routers import auth, users, restaurants, reviews, favorites, preferences, chatbot
+from app.routers import auth, users, restaurants, reviews, review_events, favorites, preferences, chatbot
 
 app = FastAPI(title="Yelp Backend")
 

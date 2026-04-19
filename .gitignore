@@ -10,3 +10,5 @@ dist/
 build/
 .DS_Store
 *.egg-info/
+.DS_Store
+__MACOSX/

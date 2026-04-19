@@ -1,18 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
-import app.models
+from app.database import ensure_indexes
 from app.routers import restaurants
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Yelp Restaurant Service")
-    Base.metadata.create_all(bind=engine)
+
+    @app.on_event("startup")
+    def startup():
+        ensure_indexes()
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -28,4 +30,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
