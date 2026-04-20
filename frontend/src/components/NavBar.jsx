@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logout, selectIsLoggedIn, selectRole, selectUser } from "../store/slices/authSlice";
 
 const YelpLogo = () => (
   <svg width="60" height="28" viewBox="0 0 60 28" xmlns="http://www.w3.org/2000/svg">
@@ -7,11 +9,14 @@ const YelpLogo = () => (
   </svg>
 );
 
-export default function Navbar({ auth, setAuth }) {
+export default function Navbar() {
+  const dispatch = useDispatch();
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const role = useSelector(selectRole);
+  const user = useSelector(selectUser);
+
   function handleLogout() {
-    setAuth({ loggedIn: false, user: null });
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    dispatch(logout());
   }
 
   return (
@@ -29,9 +34,9 @@ export default function Navbar({ auth, setAuth }) {
       {/* Nav Links */}
       <div style={{ display: "flex", gap: "16px", alignItems: "center", fontSize: "14px", color: "#333" }}>
         <Link to="/" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>Restaurants ▾</Link>
-        {auth.loggedIn && (
+        {isLoggedIn && (
           <>
-            {auth.user?.role !== "owner" && (
+            {role !== "owner" && (
               <>
                 <Link to="/add-restaurant" style={{ textDecoration: "none", color: "#333" }}>Add Restaurant</Link>
                 <Link to="/favorites" style={{ textDecoration: "none", color: "#333" }}>Favorites</Link>
@@ -39,41 +44,43 @@ export default function Navbar({ auth, setAuth }) {
                 <Link to="/preferences" style={{ textDecoration: "none", color: "#333" }}>Preferences</Link>
               </>
             )}
-            {auth.user?.role === "owner" && (
-              <Link to="/owner/dashboard" style={{ textDecoration: "none", color: "#333" }}>Dashboard</Link>
+            {role === "owner" && (
+              <>
+                <Link to="/owner/dashboard" style={{ textDecoration: "none", color: "#333" }}>Dashboard</Link>
+                <Link to="/owner/profile" style={{ textDecoration: "none", color: "#333" }}>My Restaurant</Link>
+              </>
             )}
           </>
         )}
       </div>
 
       {/* Right side */}
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px", fontSize: "14px" }}>
-        {auth.loggedIn ? (
+      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
+        {isLoggedIn ? (
           <>
-            {auth.user?.role === "user" ? (
-              <Link to="/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500, display: "flex", alignItems: "center", gap: "8px" }}>
-                {auth.user?.profile_pic ? (
-                  <img src={auth.user.profile_pic} alt="" style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover" }} />
-                ) : (
-                  <span>👤</span>
-                )}
-                {auth.user?.name || auth.user?.email}
-              </Link>
+            {user?.profile_pic ? (
+              <img src={user.profile_pic} alt="avatar"
+                style={{ width: "34px", height: "34px", borderRadius: "50%", objectFit: "cover", border: "2px solid #eee" }} />
             ) : (
-              <Link to="/owner/profile" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>
-                👤 {auth.user?.name || auth.user?.email}
-              </Link>
+              <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: "#d32323",
+                display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: "14px" }}>
+                {user?.name ? user.name[0].toUpperCase() : "U"}
+              </div>
             )}
+            <Link to={role === "owner" ? "/owner/profile" : "/profile"}
+              style={{ fontSize: "14px", color: "#333", textDecoration: "none", fontWeight: 500 }}>
+              {user?.name || "Profile"}
+            </Link>
             <button onClick={handleLogout} style={{
-              background: "transparent", border: "1px solid #d32323", color: "#d32323",
-              padding: "6px 14px", borderRadius: "4px", cursor: "pointer", fontSize: "14px"
+              background: "#d32323", color: "#fff", border: "none",
+              padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: 600, fontSize: "13px"
             }}>
-              Logout
+              Log Out
             </button>
           </>
         ) : (
           <>
-            <Link to="/login" style={{ textDecoration: "none", color: "#333", fontWeight: 500 }}>Log In</Link>
+            <Link to="/login" style={{ fontSize: "14px", color: "#333", textDecoration: "none", fontWeight: 600 }}>Log In</Link>
             <Link to="/signup" style={{
               background: "#d32323", color: "#fff", padding: "8px 16px",
               borderRadius: "4px", textDecoration: "none", fontWeight: 600, fontSize: "14px"

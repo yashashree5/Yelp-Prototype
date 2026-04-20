@@ -1,40 +1,28 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/axios";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchRestaurants, selectRestaurants, selectRestaurantsLoading } from "../store/slices/restaurantSlice";
 import RestaurantCard from "../components/RestaurantCard.jsx";
 
 const FILTERS = ["All", "Price", "Open Now", "Reservations", "Offers Delivery", "Offers Takeout"];
 const CUISINE_FILTERS = ["All", "Italian", "Chinese", "Indian", "Japanese", "Mexican", "American"];
 
 export default function Home() {
-  const [restaurants, setRestaurants] = useState([]);
+  const dispatch = useDispatch();
+  const restaurants = useSelector(selectRestaurants);
+  const loading = useSelector(selectRestaurantsLoading);
+
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeCuisine, setActiveCuisine] = useState("All");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRestaurants();
-  }, []);
-
-  const fetchRestaurants = async (q = "", loc = "") => {
-    setLoading(true);
-    try {
-      const params = {};
-      if (q) params.search = q;
-      if (loc) params.city = loc;
-      const res = await api.get("/restaurants/", { params });
-      setRestaurants(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    dispatch(fetchRestaurants());
+  }, [dispatch]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchRestaurants(search, location);
+    dispatch(fetchRestaurants({ search, city: location }));
   };
 
   const filtered = restaurants.filter(r => {
@@ -48,25 +36,17 @@ export default function Home() {
       {/* Search + Filters bar */}
       <div style={{ background: "#fff", padding: "16px 24px 0", borderBottom: "1px solid #e0e0e0" }}>
         <form onSubmit={handleSearch} style={{ display: "flex", maxWidth: "800px", marginBottom: "14px", border: "1px solid #ccc", borderRadius: "4px", overflow: "hidden" }}>
-          {/* What */}
           <div style={{ display: "flex", alignItems: "center", flex: 2, padding: "0 12px", background: "#fff", borderRight: "1px solid #ccc" }}>
             <span style={{ color: "#d32323", marginRight: "8px", fontSize: "16px" }}>🔍</span>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+            <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Restaurants, cuisine, or keywords"
-              style={{ border: "none", outline: "none", width: "100%", fontSize: "15px", padding: "10px 0" }}
-            />
+              style={{ border: "none", outline: "none", width: "100%", fontSize: "15px", padding: "10px 0" }} />
           </div>
-          {/* Where */}
           <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "0 12px", background: "#fff" }}>
             <span style={{ color: "#666", marginRight: "8px" }}>📍</span>
-            <input
-              value={location}
-              onChange={e => setLocation(e.target.value)}
+            <input value={location} onChange={e => setLocation(e.target.value)}
               placeholder="City or zip code"
-              style={{ border: "none", outline: "none", width: "100%", fontSize: "15px", padding: "10px 0" }}
-            />
+              style={{ border: "none", outline: "none", width: "100%", fontSize: "15px", padding: "10px 0" }} />
           </div>
           <button type="submit" style={{
             background: "#d32323", color: "#fff", border: "none",
@@ -83,9 +63,7 @@ export default function Home() {
               background: activeFilter === f ? "#333" : "#fff",
               color: activeFilter === f ? "#fff" : "#333",
               fontWeight: activeFilter === f ? 600 : 400,
-            }}>
-              {f}{(f === "Price" || f === "All") ? " ▾" : ""}
-            </button>
+            }}>{f}{(f === "Price" || f === "All") ? " ▾" : ""}</button>
           ))}
         </div>
 
@@ -98,33 +76,30 @@ export default function Home() {
               background: activeCuisine === c ? "#d32323" : "#f9f9f9",
               color: activeCuisine === c ? "#fff" : "#555",
               fontWeight: activeCuisine === c ? 600 : 400,
-            }}>
-              {c}
-            </button>
+            }}>{c}</button>
           ))}
         </div>
       </div>
 
       {/* Results */}
       <div style={{ padding: "0 24px", maxWidth: "900px", margin: "0 auto" }}>
-          <div style={{ padding: "16px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", margin: 0 }}>
-              Best Restaurants {location ? `near ${location}` : "near San Jose, CA"}
-            </h2>
-            <div style={{ fontSize: "13px", color: "#666" }}>
-              Sort: <span style={{ fontWeight: 600, color: "#333" }}>Recommended ▾</span>
-              <span style={{ marginLeft: "6px", color: "#999", fontSize: "16px" }}>ⓘ</span>
-            </div>
+        <div style={{ padding: "16px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#1a1a1a", margin: 0 }}>
+            Best Restaurants {location ? `near ${location}` : "near San Jose, CA"}
+          </h2>
+          <div style={{ fontSize: "13px", color: "#666" }}>
+            Sort: <span style={{ fontWeight: 600, color: "#333" }}>Recommended ▾</span>
           </div>
-          <div style={{ fontSize: "12px", color: "#666", paddingBottom: "4px" }}>{filtered.length} results</div>
+        </div>
+        <div style={{ fontSize: "12px", color: "#666", paddingBottom: "4px" }}>{filtered.length} results</div>
 
-          {loading ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>Loading...</div>
-          ) : filtered.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>No restaurants found.</div>
-          ) : (
-            filtered.map((r, i) => <RestaurantCard key={r.id} restaurant={r} index={i} />)
-          )}
+        {loading ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>No restaurants found.</div>
+        ) : (
+          filtered.map((r, i) => <RestaurantCard key={r.id} restaurant={r} index={i} />)
+        )}
       </div>
     </div>
   );

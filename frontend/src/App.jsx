@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { api } from "./api/axios";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCurrentUser, selectIsLoggedIn, selectRole } from "./store/slices/authSlice";
 import Navbar from "./components/NavBar.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
@@ -20,24 +21,20 @@ import OwnerProfile from "./pages/OwnerProfile.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
 
 export default function App() {
-  const [auth, setAuth] = useState(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role") || "user";
-    return token ? { loggedIn: true, user: { role } } : { loggedIn: false, user: null };
-  });
+  const dispatch = useDispatch();
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const role = useSelector(selectRole);
 
+  // Fetch user profile on app load if logged in
   useEffect(() => {
-    if (!auth.loggedIn || auth.user?.profile_pic !== undefined) return;
-    const role = auth.user?.role;
-    const endpoint = role === "owner" ? "/users/owner/me" : "/users/me";
-    api.get(endpoint).then(res => {
-      setAuth(prev => ({ ...prev, user: { ...prev.user, name: res.data.name, profile_pic: res.data.profile_pic } }));
-    }).catch(() => {});
-  }, [auth.loggedIn]);
+    if (isLoggedIn) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [isLoggedIn, dispatch]);
 
-  function renderForRole(role, element) {
-    if (!auth.loggedIn) return <Navigate to="/login" replace />;
-    if (auth.user?.role !== role) return (
+  function renderForRole(requiredRole, element) {
+    if (!isLoggedIn) return <Navigate to="/login" replace />;
+    if (role !== requiredRole) return (
       <div className="container mt-5">
         <div className="alert alert-warning">You are not authorized to access this page.</div>
       </div>
@@ -46,8 +43,8 @@ export default function App() {
   }
 
   function renderForRoles(roles, element) {
-    if (!auth.loggedIn) return <Navigate to="/login" replace />;
-    if (!roles.includes(auth.user?.role)) return (
+    if (!isLoggedIn) return <Navigate to="/login" replace />;
+    if (!roles.includes(role)) return (
       <div className="container mt-5">
         <div className="alert alert-warning">You are not authorized to access this page.</div>
       </div>
@@ -57,17 +54,17 @@ export default function App() {
 
   return (
     <>
-      <Navbar auth={auth} setAuth={setAuth} />
+      <Navbar />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login setAuth={setAuth} />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/restaurant/:id" element={<RestaurantDetails />} />
 
         {/* Owner auth routes */}
         <Route path="/owner/signup" element={<OwnerSignup />} />
-        <Route path="/owner/login" element={<OwnerLogin setAuth={setAuth} />} />
+        <Route path="/owner/login" element={<OwnerLogin />} />
 
         {/* User protected routes */}
         <Route path="/profile" element={renderForRole("user", <Profile />)} />
@@ -82,7 +79,7 @@ export default function App() {
         <Route path="/owner/profile" element={renderForRole("owner", <OwnerProfile />)} />
         <Route path="/owner/restaurant/:id" element={renderForRole("owner", <OwnerManageRestaurant />)} />
       </Routes>
-      <ChatWidget isLoggedIn={auth.loggedIn} role={auth.user?.role || null} />
+      <ChatWidget isLoggedIn={isLoggedIn} role={role} />
     </>
   );
 }
