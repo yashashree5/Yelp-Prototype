@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: yelp-backend-user:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-user:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8001
           envFrom:
@@ -53,8 +53,8 @@ spec:
     spec:
       containers:
         - name: owner-service
-          image: yelp-backend-owner:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-owner:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8002
           envFrom:
@@ -92,8 +92,8 @@ spec:
     spec:
       containers:
         - name: restaurant-service
-          image: yelp-backend-restaurant:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-restaurant:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8003
           envFrom:
@@ -131,8 +131,8 @@ spec:
     spec:
       containers:
         - name: review-service
-          image: yelp-backend-review:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-review:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8004
           envFrom:
@@ -170,8 +170,8 @@ spec:
     spec:
       containers:
         - name: review-worker
-          image: yelp-backend-review-worker:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-review-worker:latest
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: yelp-config
@@ -195,8 +195,8 @@ spec:
     spec:
       containers:
         - name: restaurant-worker
-          image: yelp-backend-restaurant-worker:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-restaurant-worker:latest
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: yelp-config
@@ -219,8 +219,8 @@ spec:
     spec:
       containers:
         - name: user-worker
-          image: yelp-backend-user-worker:latest
-          imagePullPolicy: IfNotPresent
+          image: 192332357178.dkr.ecr.us-east-1.amazonaws.com/yelp-backend-user-worker:latest
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: yelp-config

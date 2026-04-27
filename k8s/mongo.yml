@@ -8,6 +8,7 @@ spec:
   resources:
     requests:
       storage: 2Gi
+  storageClassName: gp2
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -47,4 +48,3 @@ spec:
     - name: mongo
       port: 27017
       targetPort: 27017
-
